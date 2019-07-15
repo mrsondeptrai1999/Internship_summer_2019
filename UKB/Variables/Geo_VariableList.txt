@@ -1,0 +1,68 @@
+22702 Home location - east co-ordinate (rounded)
+22704 Home location - north co-ordinate (rounded)
+22700 Date first recorded at location
+20074 Home location at assessment - east co-ordinate (rounded)
+20075 Home location at assessment - north co-ordinate (rounded)
+130 Place of birth in UK - east co-ordinate
+129 Place of birth in UK - north co-ordinate
+189 Townsend deprivation index at recruitment
+26410 Index of Multiple Deprivation (England)
+26427 Index of Multiple Deprivation (Scotland)
+26426 Index of Multiple Deprivation (Wales)
+26433 Access to services score (Scotland)
+26422 Access to services score (Wales)
+26425 Community safety score (Wales)
+26416 Crime score (England)
+26434 Crime score (Scotland)
+26414 Education score (England)
+26431 Education score (Scotland)
+26421 Education score (Wales)
+26412 Employment score (England)
+26429 Employment score (Scotland)
+26419 Employment score (Wales)
+26413 Health score (England)
+26430 Health score (Scotland)
+26420 Health score (Wales)
+26415 Housing score (England)
+26432 Housing score (Scotland)
+26423 Housing score (Wales)
+26411 Income score (England)
+26428 Income score (Scotland)
+26418 Income score (Wales)
+26410 Index of Multiple Deprivation (England)
+26427 Index of Multiple Deprivation (Scotland)
+26426 Index of Multiple Deprivation (Wales)
+26417 Living environment score (England)
+26424 Physical environment score (Wales)
+24023 Average 16-hour sound level of noise pollution
+24024 Average 24-hour sound level of noise pollution
+24020 Average daytime sound level of noise pollution
+24021 Average evening sound level of noise pollution
+24022 Average night-time sound level of noise pollution
+24014 Close to major road
+24012 Inverse distance to the nearest major road
+24010 Inverse distance to the nearest road
+24016 Nitrogen dioxide air pollution; 2005
+24017 Nitrogen dioxide air pollution; 2006
+24018 Nitrogen dioxide air pollution; 2007
+24003 Nitrogen dioxide air pollution; 2010
+24004 Nitrogen oxides air pollution; 2010
+24019 Particulate matter air pollution (pm10); 2007
+24005 Particulate matter air pollution (pm10); 2010
+24007 Particulate matter air pollution (pm2.5) absorbance; 2010
+24006 Particulate matter air pollution (pm2.5); 2010
+24008 Particulate matter air pollution 2.5-10um; 2010
+24015 Sum of road length of major roads within 100m
+24013 Total traffic load on major roads
+24011 Traffic intensity on the nearest major road
+24009 Traffic intensity on the nearest road
+24506 Natural environment percentage, buffer 1000m
+24507 Natural environment percentage, buffer 300m
+24500 Greenspace percentage, buffer 1000m
+24503 Greenspace percentage, buffer 300m
+24501 Domestic garden percentage, buffer 1000m
+24504 Domestic garden percentage, buffer 300m
+24502 Water percentage, buffer 1000m
+24505 Water percentage, buffer 300m
+24508 Distance (Euclidean) to coast
+20118 Home area population density

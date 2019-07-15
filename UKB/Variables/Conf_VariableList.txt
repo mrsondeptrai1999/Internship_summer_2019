@@ -1,0 +1,14 @@
+54	UK Biobank assessment centre
+21003	Age when attended assessment centre
+31	Sex
+22001	Genetic sex
+845	Age completed full time education
+6138	Qualifications
+738	Average total household income before tax
+21001	Body mass index (BMI)
+21000	Ethnic background
+1873	Number of full brothers
+1883	Number of full sisters
+25741	Mean rfMRI head motion, averaged across space and time points
+25742	Mean tfMRI head motion, averaged across space and time points
+
