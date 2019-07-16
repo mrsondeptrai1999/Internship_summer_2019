@@ -10,14 +10,12 @@ def csv_to_column (directory, name):
     for line in data:
          new_string = ''.join(ch for ch in line if ch.isdigit())
          #if new_string != '':
-         ans.append(new_string) 
-    #print(ans)
+         ans.append(new_string)
+    print(ans)
     
     a= open(name,"w+")
     for i in ans:
         a.write(i + '\n')
     return(None)
 
-#csv_to_column ('UKB/Variables/Conf_VariableList.txt', 'UKB/Variables/Conf_VariableList_ID_only.txt')
-#b = open('Conf_VariableList_ID.txt','r')
-#print(b.read())
+csv_to_column ('UKB/Variables/Conf_VariableList.txt', 'Conf_VariableList_ID.txt')
