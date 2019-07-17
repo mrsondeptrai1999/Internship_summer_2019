@@ -18,6 +18,8 @@ def csv_to_column (directory, name):
         a.write(i + '\n')
     return(None)
 
-#csv_to_column ('UKB/Variables/Conf_VariableList.txt', 'UKB/Variables/Conf_VariableList_ID_only.txt')
+csv_to_column ('UKB/Variables/Conf_VariableList.txt', 'UKB/Variables/Conf_VariableList_ID_only.txt')
+csv_to_column ('UKB/Variables/Geo_VariableList.txt', 'UKB/Variables/Geo_VariableList_ID_only.txt')
+csv_to_column ('UKB/Variables/T1MRI_VariableList.txt', 'UKB/Variables/T1MRI_VariableList_ID_only.txt')
 #b = open('Conf_VariableList_ID.txt','r')
 #print(b.read())
