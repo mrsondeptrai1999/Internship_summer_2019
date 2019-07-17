@@ -23,8 +23,7 @@ def my_read(directory):
  
     
     return(None)
-    
-#my_read('tsv_files/Conf_Variable.tsv')    
+      
 
 def my_write(field_id,value,subject_id,directory):
     df1 = pd.read_csv(field_id, sep="\t")
@@ -38,4 +37,3 @@ def my_write(field_id,value,subject_id,directory):
     df2.to_csv(directory,index=False)
 
 
-#my_write('field_id.csv','value2.csv','subject_id.csv','output.csv')
