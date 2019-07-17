@@ -1,21 +1,41 @@
 import numpy as np
 import pandas as pd
-'UKB/Variables/Conf_VariableList.txt'
+import csv
 
-def csv_to_column (directory, name):
-    f = open(directory,'r')
-    #print(f.read())
-    ans = []
-    data = f.readlines()
-    for line in data:
-         new_string = ''.join(ch for ch in line if ch.isdigit())
-         #if new_string != '':
-         ans.append(new_string)
-    print(ans)
+def my_read(directory):
+    df = pd.read_csv(directory, sep="\t")
     
-    a= open(name,"w+")
-    for i in ans:
-        a.write(i + '\n')
+    subject_id = df['eid']
+    print(subject_id)
+    
+    field_id = list(df)
+    print(field_id)
+    
+    df2 = df.drop('eid',axis=1) 
+    df2.to_csv('value2.csv', header=False, index=False)
+    
+    subject_id.to_csv('subject_id.csv',index=False)
+  
+    a= open('field_id.csv',"w+")
+    for i in field_id:
+        #if i != 'eid':
+        a.write(str(i) + '\n')   
+ 
+    
     return(None)
+    
+#my_read('tsv_files/Conf_Variable.tsv')    
 
-csv_to_column ('UKB/Variables/Conf_VariableList.txt', 'Conf_VariableList_ID.txt')
+def my_write(field_id,value,subject_id,directory):
+    df1 = pd.read_csv(field_id, sep="\t")
+
+    df2 = pd.read_csv(value, sep=",",names = df1['eid'].tolist())
+
+    df3 = pd.read_csv(subject_id, sep=",",names=['eid'])
+
+    df2.insert(loc=0, column='eid', value=df3)
+
+    df2.to_csv(directory,index=False)
+
+
+#my_write('field_id.csv','value2.csv','subject_id.csv','output.csv')
