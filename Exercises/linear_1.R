@@ -7,7 +7,6 @@ names(Boston)
 attach(Boston)
 lstat2 <- (lstat-mean(lstat))
 medv2 <- medv-mean(medv)
-lm.fit = lm(medv~(lstat-mean(lstat)),data=Boston)
 
 lm.fit = lm(medv2~lstat2)
 lm.fit
