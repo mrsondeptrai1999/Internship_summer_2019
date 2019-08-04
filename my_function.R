@@ -11,33 +11,29 @@ mean_impute <- function(data){
   return (data)
 } # for loop to impute
 
-my_vif<-function(T1_id){
-  df4 <- df1
-  df4['y'] <-df2[T1_id]
-  lm.fit2<-lm(y~.,data=df4)
-  return(vif(lm.fit2))
+my_vif <- function(df){
+  ans = diag(solve(cor(df)))
+  return(ans)
+} # vif is the diag of inverse of cor matrix
+
+my_AIC <- function(df,vector,epsilon){
+  ans = 2*(length(df)+1) + dim(df)[1]*log(sum(epsilon)/(dim(df)[1]))  
+  # length + 1 since number of beta estimates and error
+  return(ans)
 }
 
-my_AIC<-function(T1_id){
-  df4 <- df1
-  df4['y'] <-df2[T1_id]
-  lm.fit2<-lm(y~.,data=df4)
-  return(AIC(lm.fit2))
-}
-
-my_BIC<-function(T1_id){
-  df4 <- df1
-  df4['y'] <-df2[T1_id]
-  lm.fit2<-lm(y~.,data=df4)
-  return(BIC(lm.fit2))
+my_BIC <- function(df,vector,epsilon){
+  ans = log(dim(df)[1])*(length(df)+1) + dim(df)[1]*log(sum(epsilon)/(dim(df)[1]))  
+  # length + 1 since number of beta estimates and error
+  return(ans)
 }
 
 my_read <- function(directory) {
   
   df = read.table(file = directory, sep = '\t', header = FALSE)
-  write.table(df[1,-1],'field_id_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
-  write.table(df[,1],'subject_id_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
-  write.table(df[,-1],'value_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
+  write.table(df[1,-1],'my_data/field_id_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
+  write.table(df[,1],'my_data/subject_id_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
+  write.table(df[,-1],'my_data/value_T1MRI.csv',sep=',',row.names = FALSE,col.names = FALSE)
   
 }
 
