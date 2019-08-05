@@ -44,6 +44,7 @@ prob_imputation <- function(df){
 
 df2_21000_2 <- prob_imputation(df2_21000$X21000.0.0)
 df2_21000_2 <- my_grouping_21000(df2_21000_2) 
+df2_21000_2 <- data.frame(X21000.0.0 = df2_21000_2)
 df2_21000_3 <- dummy.data.frame(data = df2_21000_2,dummy.classes='ALL',sep='_')
 df2_21000_3 <- df2_21000_3[-1] #Dont need 1 column, choose column -3
 
