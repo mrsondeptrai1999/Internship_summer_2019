@@ -3,8 +3,6 @@ library(carData)
 library(dummies)
 library(car)
 
-# tsv files must be in same folder with this
-
 
 # DATA CLEANING FOR CONFOUNDING VARIABLES--------------------------------
 
@@ -15,8 +13,7 @@ df2 <- read.table('my_data/Conf_Variable.tsv',sep='\t',header=TRUE)
 
 # Take instance 2 of field_id 54 and create dummy variables
 df2_54 <- df2[4] 
-df2_54_2 <- dummy(df2_54$X54.2.0,sep='_')
-df2_54_2 <- data.frame(df2_54_2)
+df2_54_2 <- dummy.data.frame(data = df2_54,dummy.classes='ALL',sep='_')
 df2_54_2[1] <- (df2_54_2[1]-df2_54_2[2])
 df2_54_2 <- df2_54_2[-2] 
 
@@ -47,8 +44,7 @@ prob_imputation <- function(df){
 
 df2_21000_2 <- prob_imputation(df2_21000$X21000.0.0)
 df2_21000_2 <- my_grouping_21000(df2_21000_2) 
-df2_21000_3 <- dummy(df2_21000_2,sep='_')
-df2_21000_3 <- data.frame(df2_21000_3)
+df2_21000_3 <- dummy.data.frame(data = df2_21000_2,dummy.classes='ALL',sep='_')
 df2_21000_3 <- df2_21000_3[-1] #Dont need 1 column, choose column -3
 
 # Add the above to data frame
