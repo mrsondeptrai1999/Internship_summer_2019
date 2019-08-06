@@ -1,0 +1,11 @@
+Age,"21,003",Age
+ngSex,31,Non-genetic sex
+BMI,21001,Body Mass Index
+NumSibs,1873;1883,Number of Siblings
+ASCNT,54,UK Biobank Assesment centre
+dEthn,21000,Ethnicity
+dIncm,738,Average total household income before tax
+HeadSize,25000,Head Size (From T1MRI)
+Age_squared,21003,Age squared
+Age_ngSex ,21003;31,Age times Sex
+Age_squared_ngSex,21003;31,Age squared times Sex
