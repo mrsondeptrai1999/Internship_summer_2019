@@ -2,7 +2,7 @@ source('my_function.R')
 library(carData)
 library(dummies)
 library(car)
-
+library(pracma)
 
 # DATA CLEANING FOR CONFOUNDING VARIABLES--------------------------------
 
@@ -11,13 +11,20 @@ library(car)
 df1 <- read.table('my_data/Conf_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
 df2 <- read.table('my_data/Conf_Variable.tsv',sep='\t',header=TRUE)
 
-# Take instance 2 of field_id 54 and create dummy variables
+# Count number of NA
+na_count <-sapply(df1, function(y) sum(length(which(is.na(y)))))
+na_count <- data.frame(na_count)
+na_count
+# All columns has around 500 NA or less, insignificant
+# Only field Id 845 has 9838 NAs (almost 50%). Also we have another column for age, so I suggest to cut this 
+
+# Take instance 2 of field_id 54(Assesment center) and create dummy variables
 df2_54 <- df2[4] 
 df2_54_2 <- dummy.data.frame(data = df2_54,dummy.classes='ALL',sep='_')
 df2_54_2[1] <- (df2_54_2[1]-df2_54_2[2])
 df2_54_2 <- df2_54_2[-2] 
 
-# Create dummy variabble for field id 21000
+# Create dummy variabble for field id 21000 (Ethnicity)
 df2_21000 <- df2[37]
 
 #function change small subgroup to large subgroup(1001 to 1 for example)
@@ -32,21 +39,12 @@ my_grouping_21000<-function(a){
   return(a)
 }
 
-# Imputation
-prob_imputation <- function(df){
-  for (i in 1:length(df)){
-    while (is.na(df[i])){
-      df[i] <- df[floor(runif(1,1,length(df)))]
-    }
-  }
-  return (df)
-} #specify which column
-
-df2_21000_2 <- prob_imputation(df2_21000$X21000.0.0)
+sum(is.na(df2_21000)) # 6 na, insignificant compared to 22000 subjects
+df2_21000_2 <- prob_imputation(df2_21000$X21000.0.0) #imputation
 df2_21000_2 <- my_grouping_21000(df2_21000_2) 
 df2_21000_2 <- data.frame(X21000.0.0 = df2_21000_2)
 df2_21000_3 <- dummy.data.frame(data = df2_21000_2,dummy.classes='ALL',sep='_')
-df2_21000_3 <- df2_21000_3[-1] #Dont need 1 column, choose column -3
+df2_21000_3 <- df2_21000_3[-1] #Dont need 1 column, omit column -3
 
 # Add the above to data frame
 df1_2 <- df1[-c(2,9)]
@@ -58,65 +56,45 @@ df1_3 <- df1_2
 df1_3[8] <- df1_3[8] + df1_3[9]
 df1_3 <- df1_3[-9]
 
-#head(df1_3)
-write.table(df1_3,'my_data/conf_table_ver_2.csv',sep=',',row.names = FALSE)
+colnames(df1_3)[9] <- 'ASCNT'
+colnames(df1_3)[2] <- 'Age'
+colnames(df1_3)[3] <- 'ngSex'
+colnames(df1_3)[c(10:16)] <- c('dEthn_.1', 'dEthn_1','dEthn_2','dEthn_3','dEthn_4','dEthn_5','dEthn_6')
+colnames(df1_3)[8] <- 'NumSibs'
+colnames(df1_3)[c(4:7)] <- c('gSex','Age_complete_edu','dIncm','BMI')
+
+# Take field_id 738(Income) and create dummy variables
+df2_738 <- df1[7] 
+sum(is.na(df2_738)) # 380 na, insignificant compared to 22000 subjects
+df2_738_2 <- prob_imputation(df2_738$X738.0.0)
+df2_738_2 <- data.frame(dIncm = df2_738_2)
+df2_738_2 <- dummy.data.frame(data = df2_738_2,dummy.classes='ALL',sep='_')
+df2_738_3 <- df2_738_2[-1] #Dont need 1 column, omit column -3
+colnames(df2_738_3)[1] <- 'dIncm_.1' # change name to avoid dataframe errors with minus sign
+# Add this to data frame
+df1_4 <- cbind(df1_3,df2_738_3)
+df1_4 <- df1_4[-6] # remove old Income
+
+#Extracting head size
+df_T1 <- read.table('my_data/T1MRI_25000.tsv',sep='\t',header = TRUE)
+colnames(df_T1)[2] <- 'HeadSize'
+df1_5 <- cbind(df1_4,df_T1[2])
+
+# Remove field ID 845 (Age after finishing full time edu) since data is sparse
+df1_5 <- df1_5[-5]
+
+# Change dummy of Sex columns to [1 -1] instead of [1 0],get rid of gsex since we dont use it
+# Not use to impute since no NA in ngSex
+df1_5$ngSex[df1_5$ngSex==0] <- -1
+df1_5 <- df1_5[-4]
+
+# Add quadratic columns
+df1_5['Age_squared'] <- (df1_5$Age)^2
+df1_5['Age_ngSex'] <- df1_5$Age * df1_5$ngSex
+df1_5['Age_squared_ngSex'] <- (df1_5$Age)^2 * df1_5$ngSex
+
+write.table(df1_5,'my_data/conf_table_ver_2.csv',sep=',',row.names = FALSE)
 print('conf')
-#----------------------------------------------------------------
-
-
-
-# DATA CLEANING FOR GEOSPATIAL VARIABLES--------------------------------
-df1 <- read.table('my_data/Geo_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
-df2 <- read.table('my_data/Geo_Variable_2.tsv',sep='\t',header=TRUE)
-# did not download everything in first file so have to download the missing data is second file
-#df3 <- read.table('geo_table_ver_2.csv',sep=',',header=TRUE)
-
-df2_2 <- df2[-c(13:15)] # these field _id unpacked in first file so delete
-df2_2 <- df2[-c(6:8)] # remove 24016,24017,24108 since we have data in 2010
-
-df2_particulate <- df2[c(2:5)] # Deal with particulate matter fields
-df2_particulate_2 <- mean_impute(df2_particulate) # mean impute to calculate corr
-cor(df2_particulate_2)
-
-# get this
-'           X24005.0.0 X24007.0.0 X24006.0.0 X24008.0.0
-X24005.0.0  1.0000000  0.5081112  0.4921478  0.7924319
-X24007.0.0  0.5081112  1.0000000  0.5274889  0.3675723
-X24006.0.0  0.4921478  0.5274889  1.0000000  0.1416952
-X24008.0.0  0.7924319  0.3675723  0.1416952  1.0000000'
-# 05,08,07 seems to have high correlation to we average them out
-# 06's correlation values near 0 so we dont average them
-
-df2_3 <- df2_2
-df2_3[2] <- (df2_3[2]+df2_3[3]+df2_3[5])/3
-df2_3 <- df2_3[-c(3,5)] # average out 24005,07,08
-
-df2_nitrogen <- df2_3[c(4,5)]
-df2_nitrogen_2 <- mean_impute(df2_nitrogen) # mean impute to calculate corr
-cor(df2_nitrogen_2)
-'           X24003.0.0 X24004.0.0
-X24003.0.0  1.0000000  0.9141271
-X24004.0.0  0.9141271  1.0000000'
-# high corr between those two so we average them out
-
-df2_4 <- df2_3
-df2_4[4] <- (df2_4[4] + df2_4[5])/2
-df2_4<- df2_4[-5]
-df2_4<- df2_4[-5] #delete 24019
-
-df2_5 <- df2_4[-c(10,12,14,16,18,20,22,24)] #delete second visit since I forgot to flag -v 0 in funpack
-# average 24506,07 ; 00,03 ; 01,04 ; 02,05
-for (i in 4:7){
-  df2_5[2*i+1] <- (df2_5[2*i+1] + df2_5[2*i+2])/2
-} 
-df2_5 <- df2_5[-c(10,12,14,16)] 
-# rename cols
-colnames(df2_5)[c(2,9,10,11,12)] <- c("X24005_07_08.0.0","X24506_07.0.0","X24500_03.0.0","X24501_04.0.0","X24502_05.0.0")
-df2_6 <- cbind(df1,df2_5[-1])
-
-write.table(df2_6,'my_data/geo_table_ver_2.csv',sep=',',row.names = FALSE)
-print('geo')
-
 #----------------------------------------------------------------
 
 
@@ -145,6 +123,7 @@ no_T1 <- dim(df2)[2]
 no_conf <- dim(df1)[2]
 
 table_all_beta_conf <- matrix(0,nrow = no_T1,ncol = no_conf)
+table_all_beta_conf_2 <- matrix(0,nrow = no_T1,ncol = no_conf)
 
 for (my_row in 1:no_T1){
   df4 <- df1
@@ -153,6 +132,16 @@ for (my_row in 1:no_T1){
   beta_values = lm.fit2$coefficients[2:(no_conf+1)]
   table_all_beta_conf[my_row,] <- beta_values
 }
+for (my_row in 1:no_T1){
+  y = t(data.matrix(df2)[my_row])  
+  print(1)
+  X = t(data.matrix(df1))
+  print(2)
+  beta_values = y %*% pinv(X)
+  print(3)
+  table_all_beta_conf_2[my_row,] <- beta_values
+  print(4)
+}
 
 # change to numeric matrix to apply matrix mult
 y = t(data.matrix(df2)) # 1 x no_subject  
@@ -160,21 +149,180 @@ x = t(data.matrix(df1)) # no_conf x no_subject
 beta = table_all_beta_conf # 1 x no_conf
 epsilon <- y - beta %*% x
 
-print('epsilon')
-write.table(epsilon,'my_output/my_epsilon.csv',sep=',',row.names = FALSE)
+#print('epsilon')
+write.table(epsilon,'my_output/my_epsilon.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-'
+#Testing my BIC and AIC functions
+my_rss = sum((y - beta %*% x)^2)
+my_BIC(df4,my_rss) #510346.3
+my_AIC(df4,my_rss) #510154.4
+BIC(lm.fit2) #532201.3
+AIC(lm.fit2) #532009.4
+# Explanation for the slight difference is that we assume the data is Gaussian distribution and 
+# calculte log-likelihood accordingly,
+# While the package calculate log-likelihood using logLik, and I assume it does not use Gaussian as
+# straightforward as I do
+
+# Testing my beta_estimate loop
 for (my_row in 1:no_T1){
-y = t(data.matrix(df2)[my_row])  
-print(1)
-X = t(data.matrix(df1))
-print(2)
-beta_values = y %*% (solve(t(X) %*% X) %*% t(X))
-print(3)
-table_all_beta_conf[my_row,] <- beta_values
-print(4)
+  y = t(data.matrix(df2)[my_row])  
+  X = t(data.matrix(df1))
+  beta_values = y %*% pinv(X)
+  table_all_beta_conf_2[my_row,] <- beta_values
 }
-'
-#I tried this method but it is much slower than lmfit. Am I doing something wrong? 
-#my_vif(1)
 
+write.table(table_all_beta_conf,'my_output/my_beta_real.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_all_beta_conf_2,'my_output/my_beta_test.csv',sep=',',row.names = FALSE,col.names = FALSE)
+#-------------------------------------
+
+
+
+# DATA CLEANING FOR GEOSPATIAL VARIABLES--------------------------------
+
+df1 <- read.table('my_data/Geo_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
+df2 <- read.table('my_data/Geo_Variable_2.tsv',sep='\t',header=TRUE)
+# did not download everything in first file so have to download the missing data is second file
+#df3 <- read.table('geo_table_ver_2.csv',sep=',',header=TRUE)
+
+df2_2 <- df2[-c(13:15)] # these field _id unpacked in first file so delete
+df2_2 <- df2_2[-c(6:8)] # remove 24016,24017,24108 since we have data in 2010
+
+# air pollution-----------------------------------------------
+df2_air_pol <- df2_2[c(2,3,4,5,6,7)] # Deal with air pollution
+sum(is.na(df2_air_pol))
+#first 4 cols have 752 NA, last 2 have 176 NA, which are all insignificant
+df2_air_pol_2 <- mean_impute(df2_air_pol) # mean impute to calculate corr
+cor(df2_air_pol_2)
+
+# get this
+'           X24005.0.0 X24007.0.0 X24006.0.0 X24008.0.0 X24003.0.0 X24004.0.0
+X24005.0.0  1.0000000  0.5081112  0.4921478  0.7924319  0.4415832  0.4625774
+X24007.0.0  0.5081112  1.0000000  0.5274889  0.3675723  0.6390328  0.5617424
+X24006.0.0  0.4921478  0.5274889  1.0000000  0.1416952  0.8552657  0.8341973
+X24008.0.0  0.7924319  0.3675723  0.1416952  1.0000000  0.1059970  0.1554351
+X24003.0.0  0.4415832  0.6390328  0.8552657  0.1059970  1.0000000  0.9141271
+X24004.0.0  0.4625774  0.5617424  0.8341973  0.1554351  0.9141271  1.0000000'
+# 05,08 seems to have high correlation to we average them out (pm10,2.5-10um)
+# 06,03,04,07 seems to have high correlation to we average them out ((pm2.5) absorbance,(pm2.5),...)
+
+df2_3 <- df2_2
+df2_3[2] <- (df2_3[2]+df2_3[5])/2
+df2_3[3] <- (df2_3[3]+df2_3[4]+df2_3[6]+df2_3[7])/4
+df2_3 <- df2_3[-c(4,5,6,7)] # average out 24005,07,08
+#-----------------------------------------------
+
+df2_3 <- df2_3[-4] #delete 24019
+
+# Traffic and Greenspace -----------------------------------
+df2_4 <- df2_3[-c(6,8,10,12,14,16,18,20)] #delete second visit since I forgot to flag -v 0 in funpack
+df2_4 <- df2_4[-c(11,12)] # not need water
+df2_5 <- cbind(df1,df2_4[-1])
+df2_misc <- df2_5[c(20,13,14,15,21,22,23,24,25,26)] 
+sum(is.na(df2_misc))
+# 176 NAs for first 4 cols, 185 NAs for next 2 cols, 886 for last 4 cols
+# All are relatively small compared to 20000 so imputation is safe
+df2_misc_2 <- mean_impute(df2_misc)
+cor(df2_misc_2)
+
+'            X24015.0.0  X24013.0.0  X24011.0.0    X24009.0.0    X24506.0.0    
+X24015.0.0  1.000000000  0.84149453 -0.0602832063  0.5099210286 -0.038242630
+X24013.0.0  0.841494527  1.00000000 -0.0289006885  0.5312831977 -0.068648301
+X24011.0.0 -0.060283206 -0.02890069  1.0000000000  0.0003216369 -0.042148250
+X24009.0.0  0.509921029  0.53128320  0.0003216369  1.0000000000  0.001323209
+X24506.0.0 -0.038242630 -0.06864830 -0.0421482502  0.0013232085  1.000000000
+X24507.0.0 -0.028191497 -0.05612891 -0.0319871393  0.0240725872  0.786546012
+X24500.0.0 -0.018243502 -0.04911744 -0.0289425383  0.0103795532  0.942872061
+X24503.0.0  0.007761503 -0.02337043 -0.0204448992  0.0389725536  0.804622271
+X24501.0.0 -0.045020139 -0.01553550  0.0123599832 -0.0389719545 -0.735139406
+X24504.0.0 -0.089159845 -0.05925977  0.0157445464 -0.0680838334 -0.537146455
+X24507.0.0  X24500.0.0   X24503.0.0  X24501.0.0  X24504.0.0
+X24015.0.0 -0.02819150 -0.01824350  0.007761503 -0.04502014 -0.08915984
+X24013.0.0 -0.05612891 -0.04911744 -0.023370432 -0.01553550 -0.05925977
+X24011.0.0 -0.03198714 -0.02894254 -0.020444899  0.01235998  0.01574455
+X24009.0.0  0.02407259  0.01037955  0.038972554 -0.03897195 -0.06808383
+X24506.0.0  0.78654601  0.94287206  0.804622271 -0.73513941 -0.53714646
+X24507.0.0  1.00000000  0.74578585  0.866706381 -0.62389019 -0.67078370
+X24500.0.0  0.74578585  1.00000000  0.854245744 -0.81907863 -0.60386455
+X24503.0.0  0.86670638  0.85424574  1.000000000 -0.74522195 -0.81110220
+X24501.0.0 -0.62389019 -0.81907863 -0.745221947  1.00000000  0.81270933
+X24504.0.0 -0.67078370 -0.60386455 -0.811102199  0.81270933  1.00000000'
+
+df2_6 <- df2_5
+
+# Traffic: 24015,13,09 has high enough correlation so we average them out, 
+# 11 has low cor with the other 3 so it is seperated
+df2_6[20] <- (df2_6[20]+df2_6[13]+df2_6[15])/3
+# Natural environment percentage(24506,24507): cor is around 0.79, high enough to average
+df2_6[21] <- (df2_6[21]+df2_6[22])/2
+# Greenspace percentage(24500,24503): cor is around 0.85, high enough to avr
+df2_6[23] <- (df2_6[23]+df2_6[24])/2
+# Domestic garden percentage(24501,24504): cor is around 0.81, high enough to average
+df2_6[25] <- (df2_6[25]+df2_6[26])/2
+
+df2_6 <- df2_6[-c(13,15,22,24,26)]
+df2_6 <- df2_6[-c(7,8,9)] # Omit noise pollution
+#-------------------------------------------
+
+# count number of NAs in each col
+na_count <-sapply(df2_6, function(y) sum(length(which(is.na(y)))))
+na_count <- data.frame(na_count)
+na_count
+# Highest NA in oe column is 1263, which is insignificant compared to around 22000 subjects
+# So no column is too sparse
+
+#--------------------------------------------
+
+# Rename
+colnames(df2_6)<- c('eid','home_loc_east','home_loc_north','PoB_east','PoB_north','Townsend',
+                    'close_maj_road','Distance_nearest_road_1','Distance_nearest_road_2','Traffic_1',
+                    'dist_to_coast','pop_density','air_pol_1','air_pol_2','Traffic_2','Greenspace_1',
+                    'Greenspace','Greenspace_2')
+# Greensapce and natural env have high pos correlation so we can avr
+# but above and domestic garden high neg cor so not avr
+df2_6[16] <- (df2_6[16]+df2_6[17])/2
+df2_6 <- df2_6[-17]
+
+# Delete 'close to major road' column since we have better measurements for that
+# Using inverse of nearest major road and nearest road instead
+df2_6[8] <- mean_impute(df2_6[8])
+df2_6[9] <- mean_impute(df2_6[9])
+cor(df2_6$Distance_nearest_road_1, df2_6$Distance_nearest_road_2)
+#around 0.1251037 so low correlation
+
+a <- mean_impute(df2_6[2]) 
+b <- mean_impute(df2_6[4])
+cor(a,b) # around 0.3
+a <- mean_impute(df2_6[3]) 
+b <- mean_impute(df2_6[5])
+cor(a,b) # around 0.4
+#low correltion betwen location variables
+
+# Traffic_1 = Traffic intensity on the nearest major road 
+# Traffic_2 = Sum of road length of major roads within 100m + Total traffic load on major roads + Traffic intensity on the nearest road
+# air_pol_1 = Particulate matter air pollution (pm10) and(2.5-10um) ; 2010
+# air_pol_2 = Nitrogen dioxide+oxide air pollution, Particulate matter air pollution (pm2.5), (pm2.5) absorbance,2010
+# Greenspace_1 = Greenspace/Natural Environment percentage, buffer 1000m/300m, 
+# Greenspace_2 = Domestic garden percentage, buffer 1000m/300m
+# pop_density = 20118
+# dist_to_coast = 24508
+# Distance_nearest_road_2 = Inverse distance to the nearest road
+# Distance_nearest_road_1 = Inverse distance to the nearest major road
+# Townsend = townsend
+# PoB_north = location
+# PoB_east = location
+# home_loc_north = location
+# home_loc_east =location
+#--------------------------------------------
+
+write.table(df2_6,'my_data/geo_table_ver_2.csv',sep=',',row.names = FALSE)
+#print('geo')
+
+#----------------------------------------------------------------
+
+
+df4 <- df1
+df4['y'] <-df2[1]
+lm.fit2<-lm(y~.,data=df4)
+beta_values = lm.fit2$coefficients[2:(no_conf+1)]
+beta_values <- data.frame(beta_values)
+table_all_beta_conf[my_row,] <- beta_values

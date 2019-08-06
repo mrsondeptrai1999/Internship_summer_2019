@@ -16,14 +16,14 @@ my_vif <- function(df){
   return(ans)
 } # vif is the diag of inverse of cor matrix
 
-my_AIC <- function(df,vector,epsilon){
-  ans = 2*(length(df)+1) + dim(df)[1]*log(sum(epsilon)/(dim(df)[1]))  
+my_AIC <- function(df,epsilon){
+  ans = 2*(length(df)+1) + dim(df)[1]*log(2*pi*epsilon/(dim(df)[1]))  
   # length + 1 since number of beta estimates and error
   return(ans)
 }
 
-my_BIC <- function(df,vector,epsilon){
-  ans = log(dim(df)[1])*(length(df)+1) + dim(df)[1]*log(sum(epsilon)/(dim(df)[1]))  
+my_BIC <- function(df,epsilon){
+  ans = log(dim(df)[1])*(length(df)+1) + dim(df)[1]*log((2*pi*epsilon)/(dim(df)[1]))
   # length + 1 since number of beta estimates and error
   return(ans)
 }
@@ -45,4 +45,13 @@ my_write <- function(field_id,subject_id,value,directory) {
   #df4 = rbind(df1,df3)
   df5 = cbind(df2, df3)
   write.table(df5,directory,sep=',',row.names = FALSE,col.names = FALSE)
+}
+
+prob_imputation <- function(df){
+  for (i in 1:length(df)){
+    while (is.na(df[i])){
+      df[i] <- df[floor(runif(1,1,length(df)))]
+    }
+  }
+  return (df)
 }
