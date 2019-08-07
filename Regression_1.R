@@ -95,6 +95,7 @@ df1_5['Age_squared_ngSex'] <- (df1_5$Age)^2 * df1_5$ngSex
 
 write.table(df1_5,'my_data/conf_table_ver_2.csv',sep=',',row.names = FALSE)
 print('conf')
+rm(list=ls())
 #----------------------------------------------------------------
 
 
@@ -112,7 +113,6 @@ print('T1MRI')
 df1_2 <- read.table('my_data/conf_table_ver_2.csv',sep = ',',header=TRUE)
 df1 <- df1_2[-1]
 df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
-df2 <- df2[1]
 
 df1 <- mean_impute(df1) # Mean impute
 df1 <- center_colmeans(df1) # Mean center
@@ -125,6 +125,7 @@ no_conf <- dim(df1)[2]
 table_all_beta_conf <- matrix(0,nrow = no_T1,ncol = no_conf)
 table_all_beta_conf_2 <- matrix(0,nrow = no_T1,ncol = no_conf)
 
+# Estimate beta by lm() function
 for (my_row in 1:no_T1){
   df4 <- df1
   df4['y'] <-df2[my_row]
@@ -132,21 +133,22 @@ for (my_row in 1:no_T1){
   beta_values = lm.fit2$coefficients[2:(no_conf+1)]
   table_all_beta_conf[my_row,] <- beta_values
 }
+
+# My own beta_estimate loop
 for (my_row in 1:no_T1){
-  y = t(data.matrix(df2)[my_row])  
-  print(1)
+  y = t(data.matrix(df2[my_row]))  
   X = t(data.matrix(df1))
-  print(2)
   beta_values = y %*% pinv(X)
-  print(3)
   table_all_beta_conf_2[my_row,] <- beta_values
-  print(4)
 }
+
+#write.table(table_all_beta_conf,'my_output/my_beta_real.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_all_beta_conf_2,'my_output/my_beta_conf.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # change to numeric matrix to apply matrix mult
 y = t(data.matrix(df2)) # 1 x no_subject  
 x = t(data.matrix(df1)) # no_conf x no_subject
-beta = table_all_beta_conf # 1 x no_conf
+beta = table_all_beta_conf_2 # 1 x no_conf
 epsilon <- y - beta %*% x
 
 #print('epsilon')
@@ -163,16 +165,7 @@ AIC(lm.fit2) #532009.4
 # While the package calculate log-likelihood using logLik, and I assume it does not use Gaussian as
 # straightforward as I do
 
-# Testing my beta_estimate loop
-for (my_row in 1:no_T1){
-  y = t(data.matrix(df2)[my_row])  
-  X = t(data.matrix(df1))
-  beta_values = y %*% pinv(X)
-  table_all_beta_conf_2[my_row,] <- beta_values
-}
-
-write.table(table_all_beta_conf,'my_output/my_beta_real.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_all_beta_conf_2,'my_output/my_beta_test.csv',sep=',',row.names = FALSE,col.names = FALSE)
+rm(list=ls())
 #-------------------------------------
 
 
@@ -182,7 +175,6 @@ write.table(table_all_beta_conf_2,'my_output/my_beta_test.csv',sep=',',row.names
 df1 <- read.table('my_data/Geo_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
 df2 <- read.table('my_data/Geo_Variable_2.tsv',sep='\t',header=TRUE)
 # did not download everything in first file so have to download the missing data is second file
-#df3 <- read.table('geo_table_ver_2.csv',sep=',',header=TRUE)
 
 df2_2 <- df2[-c(13:15)] # these field _id unpacked in first file so delete
 df2_2 <- df2_2[-c(6:8)] # remove 24016,24017,24108 since we have data in 2010
@@ -315,14 +307,89 @@ cor(a,b) # around 0.4
 #--------------------------------------------
 
 write.table(df2_6,'my_data/geo_table_ver_2.csv',sep=',',row.names = FALSE)
-#print('geo')
-
+print('geo')
+rm(list=ls())
 #----------------------------------------------------------------
 
 
-df4 <- df1
+# ESTIMATE BETA VALUES FOR T1MRI AGAINST GEO AND TEST THE HYPOTHESIS--------
+df1_2 <- read.table('my_data/geo_table_ver_2.csv',sep = ',',header=TRUE)
+df1 <- df1_2[-1]
+df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
+
+df1 <- mean_impute(df1) # Mean impute
+df1 <- center_colmeans(df1) # Mean center
+df2 <- mean_impute(df2) # Mean impute
+df2 <- center_colmeans(df2) # Mean center
+
+no_T1 <- dim(df2)[2]
+no_geo <- dim(df1)[2]
+
+table_beta_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_AIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_BIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+
+
+# My Beta_estimate loop
+for (my_row in 1:no_T1){
+  for(my_col in 1:no_geo){
+  y = t(data.matrix(df2[my_row]))  
+  X = t(data.matrix(df1[my_col]))
+  beta_values = y %*% pinv(X)
+  table_beta_geo[my_row,my_col] <- beta_values
+  }
+}
+write.table(table_beta_geo,'my_output/my_beta_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# My p_value loop
+for (my_row in 1:no_T1){
+  for(my_col in 1:no_geo){
+    y <- t(data.matrix(df2[my_row]))
+    x <- t(data.matrix(df1[my_col]))
+    beta_value <- table_beta_geo[my_row,my_col]
+    my_rss = sum((y - beta_value %*% x)^2)
+    s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
+    test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x)))) 
+    p_values <- 1 - pt(abs(test_statistics),dim(df1)[1]-no_geo)
+    table_p_geo[my_row,my_col] <- p_values
+  }
+}
+write.table(table_p_geo,'my_output/my_p_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# My AIC,BIC loop
+for (my_row in 1:no_T1){
+  for(my_col in 1:no_geo){
+    y <- t(data.matrix(df2[my_row]))
+    x <- t(data.matrix(df1[my_col]))
+    beta_value <- table_beta_geo[my_row,my_col]
+    my_rss = sum((y - beta_value %*% x)^2)
+    AIC_value <- my_AIC(df2[my_row],my_rss)
+    BIC_value <- my_BIC(df2[my_row],my_rss)
+    table_AIC_geo[my_row,my_col] <- AIC_value
+    table_BIC_geo[my_row,my_col] <- BIC_value
+  }
+}
+write.table(table_AIC_geo,'my_output/my_AIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_BIC_geo,'my_output/my_BIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+
+# Check my p-value loop, compare with built-in function
+y_test <- t(data.matrix(df2[1]))
+x_test <- t(data.matrix(df1[1]))
+beta_value <- table_beta_geo[1,1]
+my_rss = sum((y_test - beta_value %*% x_test)^2)
+s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
+test_statistics <- beta_value/(s*sqrt(pinv(x_test%*%t(x_test)))) 
+# around -33.6, correct when compared with what we got from lm() down there 
+p_value <- 1 - pt(abs(test_statistics),dim(df1)[1]-no_geo)
+# some values of p will be too small that R will recognise it as 0
+
+
+df4 <- df1[1]
 df4['y'] <-df2[1]
-lm.fit2<-lm(y~.,data=df4)
+lm.fit<-lm(y~.,data=df4)
 beta_values = lm.fit2$coefficients[2:(no_conf+1)]
-beta_values <- data.frame(beta_values)
 table_all_beta_conf[my_row,] <- beta_values
+lm.fit(summary)
+

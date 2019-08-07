@@ -21,6 +21,7 @@ my_AIC <- function(df,epsilon){
   # length + 1 since number of beta estimates and error
   return(ans)
 }
+# input: dataframe and its rss; output: AIC
 
 my_BIC <- function(df,epsilon){
   ans = log(dim(df)[1])*(length(df)+1) + dim(df)[1]*log((2*pi*epsilon)/(dim(df)[1]))
