@@ -3,7 +3,6 @@ home_loc_north,20075,"Home location at assessment, north coordinate (rounded)"
 PoB_east,130,"Place of birth in the UK, east coordinate"
 PoB_north,129,"Place of birth in the UK, north coordinate"
 Townsend,189,Townsend deprivation index at recruitment
-close_maj_road,24104,Close to major road
 Distance_nearest_road_1,24012,Inverse distance to the nearest major road
 Distance_nearest_road_2,24010,Inverse distance to the nearest road
 Traffic_1,"24,011",Traffic intensity on the nearest major road
