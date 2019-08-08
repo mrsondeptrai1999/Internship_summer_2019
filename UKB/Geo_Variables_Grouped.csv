@@ -1,15 +1,21 @@
-Traffic_1,"24,011",Traffic intensity on the nearest major road
-Traffic_2,24015;24011;24009,Sum of road length of major roads within 100m + Total traffic load on major roads + Traffic intensity on the nearest road
-air_pol_1,24005;24008,Particulate matter air pollution (pm10) and(2.5-10um) ; 2010
-air_pol_2,24003;24004;24006;24007,"Nitrogen dioxide+oxide air pollution, Particulate matter air pollution (pm2.5), (pm2.5) absorbance,2010"
-Greenspace_1,24606;24507;24500;24503,"Greenspace/Natural Environment percentage, buffer 1000m/300m"
-Greenspace_2,24501;24504,"Domestic garden percentage, buffer 1000m/300m"
-Pop_density,20118,Home area population density
-dist_to_coast,24508,Distance (Euclidean) to coast
-Distance_nearest_road_1,24012,Inverse distance to the nearest major road
-Distance_nearest_road_2,24010,Inverse distance to the nearest road
-Townsend,189,Townsend deprivation index at recruitment
 home_loc_east   ,20074,"Home location at assessment, east coordinate (rounded)"
 home_loc_north,20075,"Home location at assessment, north coordinate (rounded)"
 PoB_east,130,"Place of birth in the UK, east coordinate"
 PoB_north,129,"Place of birth in the UK, north coordinate"
+Townsend,189,Townsend deprivation index at recruitment
+close_maj_road,24104,Close to major road
+Distance_nearest_road_1,24012,Inverse distance to the nearest major road
+Distance_nearest_road_2,24010,Inverse distance to the nearest road
+Traffic_1,"24,011",Traffic intensity on the nearest major road
+dist_to_coast,24508,Distance (Euclidean) to coast
+Pop_density,20118,Home area population density
+air_pol_1,24005;24008,Particulate matter air pollution (pm10) and(2.5-10um) ; 2010
+air_pol_2,24003;24004;24006;24007,"Nitrogen dioxide+oxide air pollution, Particulate matter air pollution (pm2.5), (pm2.5) absorbance,2010"
+Traffic_2,24015;24011;24009,Sum of road length of major roads within 100m + Total traffic load on major roads + Traffic intensity on the nearest road
+Greenspace_1,24606;24507;24500;24503,"Greenspace/Natural Environment percentage, buffer 1000m/300m"
+Greenspace_2,24501;24504,"Domestic garden percentage, buffer 1000m/300m"
+
+
+
+
+
