@@ -108,7 +108,7 @@ print('T1MRI')
 
 
 
-# ADJUSTING DATA FOR CONFOUNDING FACTORS--------------------------------
+# ADJUSTING DATA FOR CONFOUNDING FACTORS (Z-SCORED)--------------------------------
 
 df1_2 <- read.table('my_data/conf_table_ver_2.csv',sep = ',',header=TRUE)
 df1 <- df1_2[-1]
@@ -119,34 +119,33 @@ df1 <- center_colmeans(df1) # Mean center
 df2 <- mean_impute(df2) # Mean impute
 df2 <- center_colmeans(df2) # Mean center
 
+df1 <- data.frame(scale(df1))
+df2 <- data.frame(scale(df2))
+
 no_T1 <- dim(df2)[2]
 no_conf <- dim(df1)[2]
 
-table_all_beta_conf <- matrix(0,nrow = no_T1,ncol = no_conf)
-table_all_beta_conf_2 <- matrix(0,nrow = no_T1,ncol = no_conf)
+table_all_beta_conf_Z_scored <- matrix(0,nrow = no_T1,ncol = no_conf)
 
 # My own beta_estimate loop
 for (my_row in 1:no_T1){
   y = t(data.matrix(df2[my_row]))  
   X = t(data.matrix(df1))
   beta_values = y %*% pinv(X)
-  table_all_beta_conf_2[my_row,] <- beta_values
+  table_all_beta_conf_Z_scored[my_row,] <- beta_values
 }
 
-#write.table(table_all_beta_conf,'my_output/my_beta_real.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_all_beta_conf_2,'my_output/my_beta_conf.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_all_beta_conf_Z_scored,'my_output/my_beta_conf_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # change to numeric matrix to apply matrix mult
 y = t(data.matrix(df2)) # 1 x no_subject  
 x = t(data.matrix(df1)) # no_conf x no_subject
-beta = table_all_beta_conf_2 # 1 x no_conf
+beta = table_all_beta_conf_Z_scored # 1 x no_conf
 epsilon <- y - beta %*% x
 
 #print('epsilon')
-write.table(epsilon,'my_output/my_epsilon.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(epsilon,'my_output/my_epsilon_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-
-rm(list=ls())
 #-------------------------------------
 
 
@@ -289,63 +288,67 @@ df1 <- center_colmeans(df1) # Mean center
 df2 <- mean_impute(df2) # Mean impute
 df2 <- center_colmeans(df2) # Mean center
 
+df1 <- data.frame(scale(df1))
+df2 <- data.frame(scale(df2))
+
 no_T1 <- dim(df2)[2]
 no_geo <- dim(df1)[2]
 
-table_beta_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_p_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_AIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_BIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_beta_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_AIC_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_BIC_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 
 # My Beta_estimate loop
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
-  y = t(data.matrix(df2[my_row]))  
-  X = t(data.matrix(df1[my_col]))
-  beta_values = y %*% pinv(X)
-  table_beta_geo[my_row,my_col] <- beta_values
+    y = t(data.matrix(df2[my_row]))  
+    X = t(data.matrix(df1[my_col]))
+    beta_values = y %*% pinv(X)
+    table_beta_geo_Z_scored[my_row,my_col] <- beta_values
   }
 }
-write.table(table_beta_geo,'my_output/my_beta_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_beta_geo_Z_scored,'my_output/my_beta_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # My p_value loop for linear model
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
     y <- t(data.matrix(df2[my_row]))
     x <- t(data.matrix(df1[my_col]))
-    beta_value <- table_beta_geo[my_row,my_col]
+    beta_value <- table_beta_geo_Z_scored[my_row,my_col]
     my_rss = sum((y - beta_value %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
     test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x)))) 
     p_values <- 2*(1 - pt(abs(test_statistics),dim(df1)[1]-no_geo))
-    table_p_geo[my_row,my_col] <- p_values
+    table_p_geo_Z_scored[my_row,my_col] <- p_values
   }
 }
-write.table(table_p_geo,'my_output/my_p_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_p_geo_Z_scored,'my_output/my_p_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # My AIC,BIC loop
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
     y <- t(data.matrix(df2[my_row]))
     x <- t(data.matrix(df1[my_col]))
-    beta_value <- table_beta_geo[my_row,my_col]
+    beta_value <- table_beta_geo_Z_scored[my_row,my_col]
     my_rss = sum((y - beta_value %*% x)^2)
     AIC_value <- my_AIC(df2[my_row],my_rss)
     BIC_value <- my_BIC(df2[my_row],my_rss)
-    table_AIC_geo[my_row,my_col] <- AIC_value
-    table_BIC_geo[my_row,my_col] <- BIC_value
+    table_AIC_geo_Z_scored[my_row,my_col] <- AIC_value
+    table_BIC_geo_Z_scored[my_row,my_col] <- BIC_value
   }
 }
-write.table(table_AIC_geo,'my_output/my_AIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_BIC_geo,'my_output/my_BIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_AIC_geo_Z_scored,'my_output/my_AIC_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_BIC_geo_Z_scored,'my_output/my_BIC_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-table_beta_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_beta_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_p_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_p_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_AIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
-table_BIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+# Quadratic Model ------------------------------
+table_beta_quad_geo_1_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_beta_quad_geo_2_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_quad_geo_1_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_quad_geo_2_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_AIC_quad_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_BIC_quad_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 # My beta, p-value,AIC, BIC loop for quadratic model
 for (my_row in 1:no_T1){
@@ -356,54 +359,52 @@ for (my_row in 1:no_T1){
     df_x <- center_colmeans(df_x)
     x <- t(data.matrix(df_x))
     beta_values = y %*% pinv(x)
-    table_beta_quad_geo_1[my_row,my_col] <- beta_values[1]
-    table_beta_quad_geo_2[my_row,my_col] <- beta_values[2]
+    table_beta_quad_geo_1_Z_scored[my_row,my_col] <- beta_values[1]
+    table_beta_quad_geo_2_Z_scored[my_row,my_col] <- beta_values[2]
     my_rss = sum((y - beta_values %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-2))
     test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
     p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
-    table_p_quad_geo_1[my_row,my_col] <- p_value_1
+    table_p_quad_geo_1_Z_scored[my_row,my_col] <- p_value_1
     test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
     p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
-    table_p_quad_geo_2[my_row,my_col] <- p_value_2
+    table_p_quad_geo_2_Z_scored[my_row,my_col] <- p_value_2
     AIC_value <- my_AIC(df2[my_row],my_rss)
     BIC_value <- my_BIC(df2[my_row],my_rss)
-    table_AIC_quad_geo[my_row,my_col] <- AIC_value
-    table_BIC_quad_geo[my_row,my_col] <- BIC_value
+    table_AIC_quad_geo_Z_scored[my_row,my_col] <- AIC_value
+    table_BIC_quad_geo_Z_scored[my_row,my_col] <- BIC_value
   }
 }
-write.table(table_beta_quad_geo_1,'my_output/my_beta_quad_geo_1.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_beta_quad_geo_2,'my_output/my_beta_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_p_quad_geo_1,'my_output/my_p_quad_geo_1.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_p_quad_geo_2,'my_output/my_p_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_AIC_quad_geo,'my_output/my_AIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_BIC_quad_geo,'my_output/my_BIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_beta_quad_geo_1_Z_scored,'my_output/my_beta_quad_geo_1_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_beta_quad_geo_2_Z_scored,'my_output/my_beta_quad_geo_2_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_p_quad_geo_1_Z_scored,'my_output/my_p_quad_geo_1_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_p_quad_geo_2_Z_scored,'my_output/my_p_quad_geo_2_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_AIC_quad_geo_Z_scored,'my_output/my_AIC_quad_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_BIC_quad_geo_Z_scored,'my_output/my_BIC_quad_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # Adjust p-values using Benjamini-Hochberg
-p_values_linear <- read.table('my_output/my_p_geo.csv',sep=',')
-p_values_linear_adjusted <- matrix(0,nrow = dim(p_values_linear)[1],ncol = dim(p_values_linear)[2])
-for (my_col in 1:dim(p_values_linear)[2]){
-  p_adjusted <- p.adjust(data.matrix(p_values_linear[,my_col]),method='BH')
-  p_values_linear_adjusted[,my_col] <- p_adjusted
+p_values_linear_Z_scored <- read.table('my_output/my_p_geo_Z_scored.csv',sep=',')
+p_values_linear_adjusted_Z_scored <- matrix(0,nrow = dim(p_values_linear_Z_scored)[1],ncol = dim(p_values_linear_Z_scored)[2])
+for (my_col in 1:dim(p_values_linear_Z_scored)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_linear_Z_scored[,my_col]),method='BH')
+  p_values_linear_adjusted_Z_scored[,my_col] <- p_adjusted
 }
-write.table(p_values_linear_adjusted,'my_output/my_p_geo_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(p_values_linear_adjusted_Z_scored,'my_output/my_p_geo_adjusted_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-p_values_quad_1 <- read.table('my_output/my_p_quad_geo_1.csv',sep=',')
-p_values_quad_1_adjusted <- matrix(0,nrow = dim(p_values_quad_1)[1],ncol = dim(p_values_quad_1)[2])
-for (my_col in 1:dim(p_values_quad_1)[2]){
-  p_adjusted <- p.adjust(data.matrix(p_values_quad_1[,my_col]),method='BH')
-  p_values_quad_1_adjusted[,my_col] <- p_adjusted
+p_values_quad_1_Z_scored <- read.table('my_output/my_p_quad_geo_1_Z_scored.csv',sep=',')
+p_values_quad_1_adjusted_Z_scored <- matrix(0,nrow = dim(p_values_quad_1_Z_scored)[1],ncol = dim(p_values_quad_1_Z_scored)[2])
+for (my_col in 1:dim(p_values_quad_1_Z_scored)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_quad_1_Z_scored[,my_col]),method='BH')
+  p_values_quad_1_adjusted_Z_scored[,my_col] <- p_adjusted
 }
-write.table(p_values_quad_1_adjusted,'my_output/my_p_quad_geo_1_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(p_values_quad_1_adjusted_Z_scored,'my_output/my_p_quad_geo_1_adjusted_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-p_values_quad_2 <- read.table('my_output/my_p_quad_geo_2.csv',sep=',')
-p_values_quad_2_adjusted <- matrix(0,nrow = dim(p_values_quad_2)[1],ncol = dim(p_values_quad_2)[2])
-for (my_col in 1:dim(p_values_quad_2)[2]){
-  p_adjusted <- p.adjust(data.matrix(p_values_quad_2[,my_col]),method='BH')
-  p_values_quad_2_adjusted[,my_col] <- p_adjusted
+p_values_quad_2_Z_scored <- read.table('my_output/my_p_quad_geo_2_Z_scored.csv',sep=',')
+p_values_quad_2_adjusted_Z_scored <- matrix(0,nrow = dim(p_values_quad_2_Z_scored)[1],ncol = dim(p_values_quad_2_Z_scored)[2])
+for (my_col in 1:dim(p_values_quad_2_Z_scored)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_quad_2_Z_scored[,my_col]),method='BH')
+  p_values_quad_2_adjusted_Z_scored[,my_col] <- p_adjusted
 }
-write.table(p_values_quad_2_adjusted,'my_output/my_p_quad_geo_2_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(p_values_quad_2_adjusted_Z_scored,'my_output/my_p_quad_geo_2_adjusted_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-#----------------------------------------------------
-
-
+                
