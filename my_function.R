@@ -1,7 +1,8 @@
 center_colmeans <- function(x) {
   xcenter = colMeans(x)
   x - rep(xcenter, rep.int(nrow(x), ncol(x)))
-} # Center function
+} # input: dataframe, output: dataframe with column mean_centered 
+#Son Ha, 07/08/19
 
 mean_impute <- function(data){
   for(i in 1:ncol(data)) {
@@ -9,25 +10,28 @@ mean_impute <- function(data){
     
   }
   return (data)
-} # for loop to impute
+} # input: vector, output: vector with all NAs mean_imputed  
+#Son Ha, 07/08/19
 
 my_vif <- function(df){
   ans = diag(solve(cor(df)))
   return(ans)
-} # vif is the diag of inverse of cor matrix
+} # input: dataframe, output: vif of dataframe (the diag of inverse of cor matrix)
+#Son Ha, 07/08/19
 
 my_AIC <- function(df,epsilon){
   ans = 2*(length(df)+1) + dim(df)[1]*log(2*pi*epsilon/(dim(df)[1]))  
   # length + 1 since number of beta estimates and error
   return(ans)
-}
-# input: dataframe and its rss; output: AIC
+}# input: dataframe for x and model's rss; output: AIC
+#Son Ha, 07/08/19
 
 my_BIC <- function(df,epsilon){
   ans = log(dim(df)[1])*(length(df)+1) + dim(df)[1]*log((2*pi*epsilon)/(dim(df)[1]))
   # length + 1 since number of beta estimates and error
   return(ans)
-}
+}# input: dataframe for x and model's rss; output: BIC
+#Son Ha, 07/08/19
 
 my_read <- function(directory) {
   
@@ -55,4 +59,5 @@ prob_imputation <- function(df){
     }
   }
   return (df)
-}
+}# input: dataframe, output: dataframe with NAs imputed using freq of each element
+#Son Ha, 07/08/19

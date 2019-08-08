@@ -8,6 +8,8 @@ library(pracma)
 
 # Clean data in file Conf_Variable_Visit_0_0.tsv
 
+rm(list=ls())
+
 df1 <- read.table('my_data/Conf_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
 df2 <- read.table('my_data/Conf_Variable.tsv',sep='\t',header=TRUE)
 
@@ -95,13 +97,14 @@ df1_5['Age_squared_ngSex'] <- (df1_5$Age)^2 * df1_5$ngSex
 
 write.table(df1_5,'my_data/conf_table_ver_2.csv',sep=',',row.names = FALSE)
 print('conf')
-rm(list=ls())
+
 #----------------------------------------------------------------
 
 
 
 # EXPORT T1MRI TABLES--------------------------------
 
+rm(list=ls())
 my_read('my_data/T1MRI_Variable.tsv')
 print('T1MRI')
 #----------------------------------------------------------------
@@ -110,6 +113,7 @@ print('T1MRI')
 
 # ADJUSTING DATA FOR CONFOUNDING FACTORS--------------------------------
 
+rm(list=ls())
 df1_2 <- read.table('my_data/conf_table_ver_2.csv',sep = ',',header=TRUE)
 df1 <- df1_2[-1]
 df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
@@ -154,16 +158,6 @@ epsilon <- y - beta %*% x
 #print('epsilon')
 write.table(epsilon,'my_output/my_epsilon.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-#Testing my BIC and AIC functions
-my_rss = sum((y - beta %*% x)^2)
-my_BIC(df4,my_rss) #510346.3
-my_AIC(df4,my_rss) #510154.4
-BIC(lm.fit2) #532201.3
-AIC(lm.fit2) #532009.4
-# Explanation for the slight difference is that we assume the data is Gaussian distribution and 
-# calculte log-likelihood accordingly,
-# While the package calculate log-likelihood using logLik, and I assume it does not use Gaussian as
-# straightforward as I do
 
 rm(list=ls())
 #-------------------------------------
@@ -172,6 +166,7 @@ rm(list=ls())
 
 # DATA CLEANING FOR GEOSPATIAL VARIABLES--------------------------------
 
+rm(list=ls())
 df1 <- read.table('my_data/Geo_Variable_Visit_0_0.tsv',sep='\t',header=TRUE)
 df2 <- read.table('my_data/Geo_Variable_2.tsv',sep='\t',header=TRUE)
 # did not download everything in first file so have to download the missing data is second file
@@ -274,7 +269,6 @@ colnames(df2_6)<- c('eid','home_loc_east','home_loc_north','PoB_east','PoB_north
 df2_6[16] <- (df2_6[16]+df2_6[17])/2
 df2_6 <- df2_6[-17]
 
-# Delete 'close to major road' column since we have better measurements for that
 # Using inverse of nearest major road and nearest road instead
 df2_6[8] <- mean_impute(df2_6[8])
 df2_6[9] <- mean_impute(df2_6[9])
@@ -340,9 +334,9 @@ for (my_row in 1:no_T1){
   table_beta_geo[my_row,my_col] <- beta_values
   }
 }
-write.table(table_beta_geo,'my_output/my_beta_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+#write.table(table_beta_geo,'my_output/my_beta_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-# My p_value loop
+# My p_value loop for linear model
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
     y <- t(data.matrix(df2[my_row]))
@@ -351,11 +345,11 @@ for (my_row in 1:no_T1){
     my_rss = sum((y - beta_value %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
     test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x)))) 
-    p_values <- 1 - pt(abs(test_statistics),dim(df1)[1]-no_geo)
+    p_values <- 2*(1 - pt(abs(test_statistics),dim(df1)[1]-no_geo))
     table_p_geo[my_row,my_col] <- p_values
   }
 }
-write.table(table_p_geo,'my_output/my_p_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+#write.table(table_p_geo,'my_output/my_p_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # My AIC,BIC loop
 for (my_row in 1:no_T1){
@@ -370,10 +364,78 @@ for (my_row in 1:no_T1){
     table_BIC_geo[my_row,my_col] <- BIC_value
   }
 }
-write.table(table_AIC_geo,'my_output/my_AIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
-write.table(table_BIC_geo,'my_output/my_BIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+#write.table(table_AIC_geo,'my_output/my_AIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+#write.table(table_BIC_geo,'my_output/my_BIC_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+table_beta_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_beta_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_p_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_AIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_BIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+
+# My beta, p-value,AIC, BIC loop for quadratic model
+for (my_row in 1:no_T1){
+  for(my_col in 1:no_geo){
+    y <- t(data.matrix(df2[my_row]))
+    df_x <- df1[my_col]
+    df_x['squared'] <- I(df1[my_col]^2)
+    df_x <- center_colmeans(df_x)
+    x <- t(data.matrix(df_x))
+    beta_values = y %*% pinv(x)
+    table_beta_quad_geo_1[my_row,my_col] <- beta_values[1]
+    table_beta_quad_geo_2[my_row,my_col] <- beta_values[2]
+    my_rss = sum((y - beta_values %*% x)^2)
+    s <- sqrt(my_rss/(dim(df1)[1]-2))
+    test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
+    p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
+    table_p_quad_geo_1[my_row,my_col] <- p_value_1
+    test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
+    p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
+    table_p_quad_geo_2[my_row,my_col] <- p_value_2
+    AIC_value <- my_AIC(df2[my_row],my_rss)
+    BIC_value <- my_BIC(df2[my_row],my_rss)
+    table_AIC_quad_geo[my_row,my_col] <- AIC_value
+    table_BIC_quad_geo[my_row,my_col] <- BIC_value
+  }
+}
+write.table(table_beta_quad_geo_1,'my_output/my_beta_quad_geo_1.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_beta_quad_geo_2,'my_output/my_beta_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_p_quad_geo_1,'my_output/my_p_quad_geo_1.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_p_quad_geo_2,'my_output/my_p_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_AIC_quad_geo,'my_output/my_AIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_BIC_quad_geo,'my_output/my_BIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# Adjust p-values using Benjamini-Hochberg
+p_values_linear <- read.table('my_output/my_p_geo.csv',sep=',')
+p_values_linear_adjusted <- matrix(0,nrow = dim(p_values_linear)[1],ncol = dim(p_values_linear)[2])
+for (my_col in 1:dim(p_values_linear)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_linear[,my_col]),method='BH')
+  p_values_linear_adjusted[,my_col] <- p_adjusted
+}
+write.table(p_values_linear_adjusted,'my_output/my_p_geo_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+p_values_quad_1 <- read.table('my_output/my_p_quad_geo_1.csv',sep=',')
+p_values_quad_1_adjusted <- matrix(0,nrow = dim(p_values_quad_1)[1],ncol = dim(p_values_quad_1)[2])
+for (my_col in 1:dim(p_values_quad_1)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_quad_1[,my_col]),method='BH')
+  p_values_quad_1_adjusted[,my_col] <- p_adjusted
+}
+write.table(p_values_quad_1_adjusted,'my_output/my_p_quad_geo_1_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+p_values_quad_2 <- read.table('my_output/my_p_quad_geo_2.csv',sep=',')
+p_values_quad_2_adjusted <- matrix(0,nrow = dim(p_values_quad_2)[1],ncol = dim(p_values_quad_2)[2])
+for (my_col in 1:dim(p_values_quad_2)[2]){
+  p_adjusted <- p.adjust(data.matrix(p_values_quad_2[,my_col]),method='BH')
+  p_values_quad_2_adjusted[,my_col] <- p_adjusted
+}
+write.table(p_values_quad_2_adjusted,'my_output/my_p_quad_geo_2_adjusted.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 
+
+
+
+# DRAFT AND NOTE, NOT IN MAIN SCRIPT, DONT RUN----------------------------------
 # Check my p-value loop, compare with built-in function
 y_test <- t(data.matrix(df2[1]))
 x_test <- t(data.matrix(df1[1]))
@@ -382,9 +444,10 @@ my_rss = sum((y_test - beta_value %*% x_test)^2)
 s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
 test_statistics <- beta_value/(s*sqrt(pinv(x_test%*%t(x_test)))) 
 # around -33.6, correct when compared with what we got from lm() down there 
-p_value <- 1 - pt(abs(test_statistics),dim(df1)[1]-no_geo)
+p_value <- 2*(1 - pt(abs(test_statistics),dim(df1)[1]-no_geo))
 # some values of p will be too small that R will recognise it as 0
-
+my_AIC(df2[1],my_rss)
+my_BIC(df2[1],my_rss)
 
 df4 <- df1[1]
 df4['y'] <-df2[1]
@@ -392,4 +455,29 @@ lm.fit<-lm(y~.,data=df4)
 beta_values = lm.fit2$coefficients[2:(no_conf+1)]
 table_all_beta_conf[my_row,] <- beta_values
 lm.fit(summary)
+AIC(lm.fit)
+BIC(lm.fit)
 
+
+# Check Quadratic model
+y_test <- t(data.matrix(df2[1]))
+x_test_2 <- t(data.matrix(df1[1]))
+df_x_test <- df1[1]
+df_x_test['squared'] <- I(df1[1]^2)
+df_x_test <- center_colmeans(df_x_test)
+x_test <- t(data.matrix(df_x_test))
+beta_values = y_test %*% pinv(x_test)
+# correct beta_values, 0.01132584 -5.536971e-08 
+my_rss = sum((y_test - beta_values %*% x_test)^2)
+s <- sqrt(my_rss/(dim(df1)[1]-2))
+test_statistics <- beta_values[2]/(s*sqrt(solve(x_test%*%t(x_test))[2,2])) 
+#correct t_value 0.01132584 
+my_AIC(df_x_test,my_rss)
+my_BIC(df_x_test,my_rss)
+
+df4 <- df1[1]
+df4['y'] <-df2[1]
+colnames(df4)[1] <- 'x'
+lm.fit<-lm(y~x+I(x^2),data=df4)
+summary(lm.fit)
+#-------------------------------------------------------------------------                         
