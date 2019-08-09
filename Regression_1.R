@@ -1,7 +1,13 @@
-source('my_function.R')
-library(carData)
+#! /apps/well/R/3.4.3/bin/Rscript
+#$ -cwd                                                                        $
+#$ -o $HOME/logs
+#$ -e $HOME/logs
+
+source('ASSP/my_function.R')
+install.packages('dummies')
+install.packages('pracma')
+
 library(dummies)
-library(car)
 library(pracma)
 
 # DATA CLEANING FOR CONFOUNDING VARIABLES--------------------------------
@@ -122,7 +128,6 @@ df2 <- center_colmeans(df2) # Mean center
 no_T1 <- dim(df2)[2]
 no_conf <- dim(df1)[2]
 
-table_all_beta_conf <- matrix(0,nrow = no_T1,ncol = no_conf)
 table_all_beta_conf_2 <- matrix(0,nrow = no_T1,ncol = no_conf)
 
 # My own beta_estimate loop
@@ -133,7 +138,6 @@ for (my_row in 1:no_T1){
   table_all_beta_conf_2[my_row,] <- beta_values
 }
 
-#write.table(table_all_beta_conf,'my_output/my_beta_real.csv',sep=',',row.names = FALSE,col.names = FALSE)
 write.table(table_all_beta_conf_2,'my_output/my_beta_conf.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # change to numeric matrix to apply matrix mult
@@ -145,8 +149,6 @@ epsilon <- y - beta %*% x
 #print('epsilon')
 write.table(epsilon,'my_output/my_epsilon.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-
-rm(list=ls())
 #-------------------------------------
 
 
@@ -196,29 +198,6 @@ sum(is.na(df2_misc))
 # All are relatively small compared to 20000 so imputation is safe
 df2_misc_2 <- mean_impute(df2_misc)
 cor(df2_misc_2)
-
-'            X24015.0.0  X24013.0.0  X24011.0.0    X24009.0.0    X24506.0.0    
-X24015.0.0  1.000000000  0.84149453 -0.0602832063  0.5099210286 -0.038242630
-X24013.0.0  0.841494527  1.00000000 -0.0289006885  0.5312831977 -0.068648301
-X24011.0.0 -0.060283206 -0.02890069  1.0000000000  0.0003216369 -0.042148250
-X24009.0.0  0.509921029  0.53128320  0.0003216369  1.0000000000  0.001323209
-X24506.0.0 -0.038242630 -0.06864830 -0.0421482502  0.0013232085  1.000000000
-X24507.0.0 -0.028191497 -0.05612891 -0.0319871393  0.0240725872  0.786546012
-X24500.0.0 -0.018243502 -0.04911744 -0.0289425383  0.0103795532  0.942872061
-X24503.0.0  0.007761503 -0.02337043 -0.0204448992  0.0389725536  0.804622271
-X24501.0.0 -0.045020139 -0.01553550  0.0123599832 -0.0389719545 -0.735139406
-X24504.0.0 -0.089159845 -0.05925977  0.0157445464 -0.0680838334 -0.537146455
-X24507.0.0  X24500.0.0   X24503.0.0  X24501.0.0  X24504.0.0
-X24015.0.0 -0.02819150 -0.01824350  0.007761503 -0.04502014 -0.08915984
-X24013.0.0 -0.05612891 -0.04911744 -0.023370432 -0.01553550 -0.05925977
-X24011.0.0 -0.03198714 -0.02894254 -0.020444899  0.01235998  0.01574455
-X24009.0.0  0.02407259  0.01037955  0.038972554 -0.03897195 -0.06808383
-X24506.0.0  0.78654601  0.94287206  0.804622271 -0.73513941 -0.53714646
-X24507.0.0  1.00000000  0.74578585  0.866706381 -0.62389019 -0.67078370
-X24500.0.0  0.74578585  1.00000000  0.854245744 -0.81907863 -0.60386455
-X24503.0.0  0.86670638  0.85424574  1.000000000 -0.74522195 -0.81110220
-X24501.0.0 -0.62389019 -0.81907863 -0.745221947  1.00000000  0.81270933
-X24504.0.0 -0.67078370 -0.60386455 -0.811102199  0.81270933  1.00000000'
 
 df2_6 <- df2_5
 
@@ -271,9 +250,20 @@ cor(a,b) # around 0.4
 
 # Delete 'close to major road' since we have inverse distance to road 
 df2_6<-df2_6[-7]
+
+df2_7 <- df2_6
+df_pop <- df2_7[11]
+df_pop <- prob_imputation(df_pop$pop_density)
+df_pop_2 <- data.frame(pop_density = df_pop)
+df_pop_2 <- dummy.data.frame(data = df_pop_2,dummy.classes='ALL',sep='_')
+df_pop_3 <- df_pop_2[2]+df_pop_2[3]+df_pop_2[7]+df_pop_2[8]
+colnames(df_pop_3)<-'pop_density_urban'
+
+df2_7 <- cbind(df2_7,df_pop_3)
+df2_7 <- df2_7[-11]
 #--------------------------------------------
 
-write.table(df2_6,'my_data/geo_table_ver_2.csv',sep=',',row.names = FALSE)
+write.table(df2_7,'my_data/geo_table_ver_2.csv',sep=',',row.names = FALSE)
 print('geo')
 
 #----------------------------------------------------------------
@@ -296,7 +286,7 @@ table_beta_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_p_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_AIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_BIC_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
-
+table_t_stats_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 # My Beta_estimate loop
 for (my_row in 1:no_T1){
@@ -309,7 +299,7 @@ for (my_row in 1:no_T1){
 }
 write.table(table_beta_geo,'my_output/my_beta_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-# My p_value loop for linear model
+# My t_statistics,p_value loop for linear model
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
     y <- t(data.matrix(df2[my_row]))
@@ -317,12 +307,23 @@ for (my_row in 1:no_T1){
     beta_value <- table_beta_geo[my_row,my_col]
     my_rss = sum((y - beta_value %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
-    test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x)))) 
+    test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x))))
+    table_t_stats_geo[my_row,my_col] <- test_statistics
     p_values <- 2*(1 - pt(abs(test_statistics),dim(df1)[1]-no_geo))
     table_p_geo[my_row,my_col] <- p_values
   }
 }
 write.table(table_p_geo,'my_output/my_p_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_geo,'my_output/my_t_stats_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# Create table for residual
+y = t(data.matrix(df2)) 
+x = t(data.matrix(df1)) 
+beta = data.matrix(read.table('my_output/my_beta_geo.csv',sep = ',',header=FALSE))
+table_residual_geo <- y - beta %*% x
+table_residual_geo_2 <- t(table_residual_geo)
+
+write.table(table_residual_geo_2,'my_output/my_residual_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # My AIC,BIC loop
 for (my_row in 1:no_T1){
@@ -346,6 +347,8 @@ table_p_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_p_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_AIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_BIC_quad_geo <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_t_stats_quad_geo_1 <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_t_stats_quad_geo_2 <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 # My beta, p-value,AIC, BIC loop for quadratic model
 for (my_row in 1:no_T1){
@@ -361,9 +364,11 @@ for (my_row in 1:no_T1){
     my_rss = sum((y - beta_values %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-2))
     test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
+    table_t_stats_quad_geo_1[my_row,my_col] <- test_statistics_1
     p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
     table_p_quad_geo_1[my_row,my_col] <- p_value_1
     test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
+    table_t_stats_quad_geo_2[my_row,my_col] <- test_statistics_2
     p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
     table_p_quad_geo_2[my_row,my_col] <- p_value_2
     AIC_value <- my_AIC(df2[my_row],my_rss)
@@ -378,6 +383,20 @@ write.table(table_p_quad_geo_1,'my_output/my_p_quad_geo_1.csv',sep=',',row.names
 write.table(table_p_quad_geo_2,'my_output/my_p_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
 write.table(table_AIC_quad_geo,'my_output/my_AIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
 write.table(table_BIC_quad_geo,'my_output/my_BIC_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_quad_geo_1,'my_output/my_t_stats_quad_geo_1.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_quad_geo_2,'my_output/my_t_stats_quad_geo_2.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# Create table for residual
+y = t(data.matrix(df2)) 
+x_1 = t(data.matrix(df1))
+x_2 = t(data.matrix(df1))^2
+beta_1 = data.matrix(read.table('my_output/my_beta_quad_geo_1.csv',sep = ',',header=FALSE))
+beta_2 = data.matrix(read.table('my_output/my_beta_quad_geo_2.csv',sep = ',',header=FALSE))
+table_residual_geo <- y - beta_1 %*% x_1 - beta_2 %*% x_2
+table_residual_geo_2 <- t(table_residual_geo)
+
+write.table(table_residual_geo_2,'my_output/my_residual_quad_geo.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
 
 # Adjust p-values using Benjamini-Hochberg
 p_values_linear <- read.table('my_output/my_p_geo.csv',sep=',')
@@ -406,4 +425,39 @@ write.table(p_values_quad_2_adjusted,'my_output/my_p_quad_geo_2_adjusted.csv',se
 
 #----------------------------------------------------
 
+# DETERMINE WHICH MODEL WE CHOOSE USING AIC AND BIC
 
+df1 <- read.table('my_output/my_AIC_geo.csv',sep=',',header=FALSE)
+df2 <- read.table('my_output/my_AIC_quad_geo.csv',sep=',',header=FALSE)
+table_compare_AIC_linear <- matrix(0,nrow = dim(df1)[1],ncol = dim(df1)[2])
+# 0 is linear model, 1 is quadratic model
+for (my_row in 1:dim(table_compare)[1]){
+  for (my_col in 1:dim(table_compare)[2]){
+    if(df2[my_row,my_col] < df1[my_row,my_col]){
+      table_compare_AIC_linear[my_row,my_col] <- 1
+    }
+    if(df2[my_row,my_col] >= df1[my_row,my_col]){
+      table_compare_AIC_linear[my_row,my_col] <- 0
+    }
+  }
+}
+
+df3 <- read.table('my_output/my_BIC_geo.csv',sep=',',header=FALSE)
+df4 <- read.table('my_output/my_BIC_quad_geo.csv',sep=',',header=FALSE)
+table_compare_BIC_linear <- matrix(0,nrow = dim(df3)[1],ncol = dim(df3)[2])
+# 0 is linear model, 1 is quadratic model
+for (my_row in 1:dim(table_compare)[1]){
+  for (my_col in 1:dim(table_compare)[2]){
+    if(df4[my_row,my_col] < df3[my_row,my_col]){
+      table_compare_BIC_linear[my_row,my_col] <- 1
+    }
+    if(df4[my_row,my_col] >= df3[my_row,my_col]){
+      table_compare_BIC_linear[my_row,my_col] <- 0
+    }
+  }
+}
+
+# Create scatter plot of hippocampus vs geo
+df1_2 <- read.table('my_data/geo_table_ver_2.csv',sep = ',',header=TRUE)
+df1 <- df1_2[-1]
+df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
