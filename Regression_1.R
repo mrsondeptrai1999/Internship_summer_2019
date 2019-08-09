@@ -1,12 +1,9 @@
 #! /apps/well/R/3.4.3/bin/Rscript
-#$ -cwd                                                                        $
+#$ -cwd 
 #$ -o $HOME/logs
 #$ -e $HOME/logs
 
 source('ASSP/my_function.R')
-install.packages('dummies')
-install.packages('pracma')
-
 library(dummies)
 library(pracma)
 
@@ -458,6 +455,42 @@ for (my_row in 1:dim(table_compare)[1]){
 }
 
 # Create scatter plot of hippocampus vs geo
+
 df1_2 <- read.table('my_data/geo_table_ver_2.csv',sep = ',',header=TRUE)
 df1 <- df1_2[-1]
 df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
+df1 <- mean_impute(df1) # Mean impute
+df2 <- mean_impute(df2) 
+for (num in 1:length(df1)){
+  y <- data.matrix(df2[47])
+  x <- data.matrix(df1[num])
+  lm.fit <- lm(y~x)
+  #abline(lm.fit,col="red", lwd=3, lty=2)
+  lm.fit2 <- lm(y~x + I(x^2))
+  new.data <- data.frame(dist = seq(from = min(x),to = max(x)), length.out = 200)
+  pred_lm <- predict(lm.fit, df2[47])
+  pred_lm2 <- predict(lm.fit2, df2[47])
+  pdf(paste("plots/rplot_left_hippo_",toString(num),".pdf",sep='')) 
+  plot(y~x)
+  lines(pred_lm ~ x, col = "red")
+  lines(pred_lm2 ~ x, col = "blue")
+  dev.off()
+}
+for (num in 1:length(df1)){
+  y <- data.matrix(df2[48])
+  x <- data.matrix(df1[num])
+  lm.fit <- lm(y~x)
+  #abline(lm.fit,col="red", lwd=3, lty=2)
+  lm.fit2 <- lm(y~x + I(x^2))
+  new.data <- data.frame(dist = seq(from = min(x),to = max(x)), length.out = 200)
+  pred_lm <- predict(lm.fit, df2[48])
+  pred_lm2 <- predict(lm.fit2, df2[48])
+  pdf(paste("plots/rplot_right_hippo_",toString(num),".pdf",sep='')) 
+  plot(y~x)
+  lines(pred_lm ~ x, col = "red")
+  lines(pred_lm2 ~ x, col = "blue")
+  dev.off()
+}
+
+
+
