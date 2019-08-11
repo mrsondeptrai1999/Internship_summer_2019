@@ -492,5 +492,65 @@ for (num in 1:length(df1)){
   dev.off()
 }
 
+# Create scatter plot of hippocampus vs geo z-scored
+df1_2 <- read.table('my_data/geo_table_ver_2.csv',sep = ',',header=TRUE)
+df1 <- df1_2[-1]
+df2 <- read.table('my_data/value_T1MRI.csv',sep = ',',header=TRUE)
+df_beta <- read.table('my_output/my_beta_geo_Z_scored.csv',sep = ',',header=FALSE)
+df_p <- read.table('my_output/my_p_geo_Z_scored.csv',sep = ',',header=FALSE)
+df_beta_2 <- read.table('my_output/my_beta_quad_geo_2_Z_scored.csv',sep = ',',header=FALSE)
+df_beta_1 <- read.table('my_output/my_beta_quad_geo_1_Z_scored.csv',sep = ',',header=FALSE)
+df_p_2 <- read.table('my_output/my_p_quad_geo_2_Z_scored.csv',sep = ',',header=FALSE)
+
+df1 <- mean_impute(df1) # Mean impute
+df1 <- center_colmeans(df1) # Mean center
+df2 <- mean_impute(df2) # Mean impute
+df2 <- center_colmeans(df2) # Mean center
+
+df1 <- data.frame(scale(df1))
+df2 <- data.frame(scale(df2))
+
+
+for (num in 1:length(df1)){
+  y <- data.matrix(df2[47])
+  x <- data.matrix(df1[num])
+  lm.fit <- lm(y~x)
+  lm.fit2 <- lm(y~x + I(x^2))
+  new.data <- data.frame(dist = seq(from = min(x),to = max(x), length.out = 200))
+  #pdf(paste("plots/rplot_left_hippo_",toString(num),".pdf",sep='')) 
+  plot(y~x,
+       main = paste('Scatter plot, p-value linear: ',formatC(df_p[47,num], format = "e", digits = 5),
+                    ', beta estimate linear:',formatC(df_beta[47,num],format = "e", digits = 5),
+                    ', \n p-value estimate quad:',formatC(df_p_2[47,num],format = "e", digits = 5),
+                    ', beta estimate quad:',formatC(df_beta_2[47,num],format = "e", digits = 5),
+                    sep=''),
+       xlab = colnames(df1)[num],ylab = colnames(df2)[47])
+  lines(data.matrix(new.data*df_beta[47,num]) ~ data.matrix(new.data), col = "red")
+  lines(data.matrix(df_beta_1[47,num]*new.data+df_beta_2[47,num]*new.data^2) ~ data.matrix(new.data), col = "blue")
+  legend('topleft', legend=c("Linear", "Quadratic"),
+         col=c("red", "blue"), lty=1:2, cex=0.8)
+  #dev.off()
+}
+
+for (num in 1:length(df1)){
+  y <- data.matrix(df2[48])
+  x <- data.matrix(df1[num])
+  lm.fit <- lm(y~x)
+  lm.fit2 <- lm(y~x + I(x^2))
+  new.data <- data.frame(dist = seq(from = min(x),to = max(x), length.out = 200))
+  #pdf(paste("plots/rplot_right_hippo_",toString(num),".pdf",sep='')) 
+  plot(y~x,
+       main = paste('Scatter plot, p-value: ',formatC(df_p[48,num], format = "e", digits = 5),
+                    ', beta estimate:',formatC(df_beta[48,num], format = "e", digits = 5),
+                    ', \n p-value estimate quad:',formatC(df_p_2[47,num],format = "e", digits = 5),
+                    ', beta estimate quad:',formatC(df_beta_2[47,num],format = "e", digits = 5),
+                    sep=''),
+       xlab = colnames(df1)[num],ylab = colnames(df2)[48])
+  lines(data.matrix(new.data*df_beta[48,num]) ~ data.matrix(new.data), col = "red")
+  lines(data.matrix(df_beta_1[48,num]*new.data+df_beta_2[48,num]*new.data^2) ~ data.matrix(new.data), col = "blue")
+  legend('topleft', legend=c("Linear", "Quadratic"),
+         col=c("red", "blue"), lty=1:2, cex=0.8)
+  #dev.off()
+}  
 
 
