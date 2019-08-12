@@ -1,7 +1,10 @@
-source('my_function.R')
-library(carData)
+#! /apps/well/R/3.4.3/bin/Rscript
+#$ -cwd 
+#$ -o $HOME/logs
+#$ -e $HOME/logs
+
+source('ASSP/my_function.R')
 library(dummies)
-library(car)
 library(pracma)
 
 # DATA CLEANING FOR CONFOUNDING VARIABLES--------------------------------
@@ -298,7 +301,7 @@ table_beta_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_p_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_AIC_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_BIC_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
-
+table_t_stats_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 # My Beta_estimate loop
 for (my_row in 1:no_T1){
@@ -311,7 +314,7 @@ for (my_row in 1:no_T1){
 }
 write.table(table_beta_geo_Z_scored,'my_output/my_beta_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
-# My p_value loop for linear model
+# My t_statistics,p_value loop for linear model
 for (my_row in 1:no_T1){
   for(my_col in 1:no_geo){
     y <- t(data.matrix(df2[my_row]))
@@ -320,11 +323,22 @@ for (my_row in 1:no_T1){
     my_rss = sum((y - beta_value %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-no_geo))
     test_statistics <- beta_value/(s*sqrt(pinv(x%*%t(x)))) 
+    table_t_stats_geo_Z_scored[my_row,my_col] <- test_statistics
     p_values <- 2*(1 - pt(abs(test_statistics),dim(df1)[1]-no_geo))
     table_p_geo_Z_scored[my_row,my_col] <- p_values
   }
 }
 write.table(table_p_geo_Z_scored,'my_output/my_p_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_geo_Z_scored,'my_output/my_t_stats_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# Create table for residual
+y = t(data.matrix(df2)) 
+x = t(data.matrix(df1)) 
+beta = data.matrix(read.table('my_output/my_beta_geo_Z_scored.csv',sep = ',',header=FALSE))
+table_residual_geo_Z_scored <- y - beta %*% x
+table_residual_geo_2_Z_scored <- t(table_residual_geo_Z_scored)
+
+write.table(table_residual_geo_2_Z_scored,'my_output/my_residual_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 
 # My AIC,BIC loop
 for (my_row in 1:no_T1){
@@ -349,6 +363,8 @@ table_p_quad_geo_1_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_p_quad_geo_2_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_AIC_quad_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 table_BIC_quad_geo_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_t_stats_quad_geo_1_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
+table_t_stats_quad_geo_2_Z_scored <- matrix(0,nrow = no_T1,ncol = no_geo)
 
 # My beta, p-value,AIC, BIC loop for quadratic model
 for (my_row in 1:no_T1){
@@ -364,9 +380,11 @@ for (my_row in 1:no_T1){
     my_rss = sum((y - beta_values %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-2))
     test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
+    table_t_stats_quad_geo_1_Z_scored[my_row,my_col] <- test_statistics_1
     p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
     table_p_quad_geo_1_Z_scored[my_row,my_col] <- p_value_1
     test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
+    table_t_stats_quad_geo_2_Z_scored[my_row,my_col] <- test_statistics_2
     p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
     table_p_quad_geo_2_Z_scored[my_row,my_col] <- p_value_2
     AIC_value <- my_AIC(df2[my_row],my_rss)
@@ -381,6 +399,20 @@ write.table(table_p_quad_geo_1_Z_scored,'my_output/my_p_quad_geo_1_Z_scored.csv'
 write.table(table_p_quad_geo_2_Z_scored,'my_output/my_p_quad_geo_2_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 write.table(table_AIC_quad_geo_Z_scored,'my_output/my_AIC_quad_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
 write.table(table_BIC_quad_geo_Z_scored,'my_output/my_BIC_quad_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_quad_geo_1_Z_scored,'my_output/my_t_stats_quad_geo_1_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+write.table(table_t_stats_quad_geo_2_Z_scored,'my_output/my_t_stats_quad_geo_2_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
+# Create table for residual
+y = t(data.matrix(df2)) 
+x_1 = t(data.matrix(df1))
+x_2 = t(data.matrix(df1))^2
+beta_1 = data.matrix(read.table('my_output/my_beta_quad_geo_1_Z_scored.csv',sep = ',',header=FALSE))
+beta_2 = data.matrix(read.table('my_output/my_beta_quad_geo_2_Z_scored.csv',sep = ',',header=FALSE))
+table_residual_geo_Z_scored <- y - beta_1 %*% x_1 - beta_2 %*% x_2
+table_residual_geo_2_Z_scored <- t(table_residual_geo_Z_scored)
+
+write.table(table_residual_geo_2_Z_scored,'my_output/my_residual_quad_geo_Z_scored.csv',sep=',',row.names = FALSE,col.names = FALSE)
+
 
 # Adjust p-values using Benjamini-Hochberg
 p_values_linear_Z_scored <- read.table('my_output/my_p_geo_Z_scored.csv',sep=',')
