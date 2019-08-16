@@ -379,11 +379,11 @@ for (my_row in 1:no_T1){
     table_beta_quad_geo_2_Z_scored[my_row,my_col] <- beta_values[2]
     my_rss = sum((y - beta_values %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-2))
-    test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
+    test_statistics_1 <- beta_values[1]/(s*sqrt(pinv(x%*%t(x))[1,1]))
     table_t_stats_quad_geo_1_Z_scored[my_row,my_col] <- test_statistics_1
     p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
     table_p_quad_geo_1_Z_scored[my_row,my_col] <- p_value_1
-    test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
+    test_statistics_2 <- beta_values[2]/(s*sqrt(pinv(x%*%t(x))[2,2]))
     table_t_stats_quad_geo_2_Z_scored[my_row,my_col] <- test_statistics_2
     p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
     table_p_quad_geo_2_Z_scored[my_row,my_col] <- p_value_2

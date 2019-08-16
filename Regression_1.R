@@ -360,11 +360,11 @@ for (my_row in 1:no_T1){
     table_beta_quad_geo_2[my_row,my_col] <- beta_values[2]
     my_rss = sum((y - beta_values %*% x)^2)
     s <- sqrt(my_rss/(dim(df1)[1]-2))
-    test_statistics_1 <- beta_values[1]/(s*sqrt(solve(x%*%t(x))[1,1]))
+    test_statistics_1 <- beta_values[1]/(s*sqrt(pinv(x%*%t(x))[1,1]))
     table_t_stats_quad_geo_1[my_row,my_col] <- test_statistics_1
     p_value_1 <- 2*(1 - pt(abs(test_statistics_1),dim(df1)[1]-2))
     table_p_quad_geo_1[my_row,my_col] <- p_value_1
-    test_statistics_2 <- beta_values[2]/(s*sqrt(solve(x%*%t(x))[2,2]))
+    test_statistics_2 <- beta_values[2]/(s*sqrt(pinv(x%*%t(x))[2,2]))
     table_t_stats_quad_geo_2[my_row,my_col] <- test_statistics_2
     p_value_2 <- 2*(1 - pt(abs(test_statistics_2),dim(df1)[1]-2))
     table_p_quad_geo_2[my_row,my_col] <- p_value_2
@@ -428,8 +428,8 @@ df1 <- read.table('my_output/my_AIC_geo.csv',sep=',',header=FALSE)
 df2 <- read.table('my_output/my_AIC_quad_geo.csv',sep=',',header=FALSE)
 table_compare_AIC_linear <- matrix(0,nrow = dim(df1)[1],ncol = dim(df1)[2])
 # 0 is linear model, 1 is quadratic model
-for (my_row in 1:dim(table_compare)[1]){
-  for (my_col in 1:dim(table_compare)[2]){
+for (my_row in 1:dim(table_compare_AIC_linear)[1]){
+  for (my_col in 1:dim(table_compare_AIC_linear)[2]){
     if(df2[my_row,my_col] < df1[my_row,my_col]){
       table_compare_AIC_linear[my_row,my_col] <- 1
     }
@@ -443,8 +443,8 @@ df3 <- read.table('my_output/my_BIC_geo.csv',sep=',',header=FALSE)
 df4 <- read.table('my_output/my_BIC_quad_geo.csv',sep=',',header=FALSE)
 table_compare_BIC_linear <- matrix(0,nrow = dim(df3)[1],ncol = dim(df3)[2])
 # 0 is linear model, 1 is quadratic model
-for (my_row in 1:dim(table_compare)[1]){
-  for (my_col in 1:dim(table_compare)[2]){
+for (my_row in 1:dim(table_compare_BIC_linear)[1]){
+  for (my_col in 1:dim(table_compare_BIC_linear)[2]){
     if(df4[my_row,my_col] < df3[my_row,my_col]){
       table_compare_BIC_linear[my_row,my_col] <- 1
     }
@@ -554,39 +554,32 @@ for (num in 1:length(df1)){
 df2 <- read.table('my_output/my_residual_geo_Z_scored.csv',sep=',',header=FALSE)
 df1_2 <- read.table('my_data/geo_table_ver_2.csv',sep = ',',header=TRUE)
 df1 <- df1_2[-1]
+df3 <- read.table('my_output/my_residual_quad_geo_Z_scored.csv',sep=',',header=FALSE)
 df1 <- mean_impute(df1) # Mean impute
 df1 <- center_colmeans(df1) # Mean center
 df2 <- mean_impute(df2) # Mean impute
 df2 <- center_colmeans(df2) # Mean center
+df3 <- mean_impute(df2) # Mean impute
+df3 <- center_colmeans(df2) # Mean center
 
 df1 <- data.frame(scale(df1))
 df2 <- data.frame(scale(df2))
+df3 <- data.frame(scale(df3))
 
 for (num in 1:length(df1)){
   y <- data.matrix(df2[47])
   x <- data.matrix(df1[num])
   model_lm <- lm(y ~ x)
-  model_lm2 <- lm(y ~ x + I(x^2))
   new.data <- data.frame(dist = seq(from = min(x),
                                     to = max(x), length.out = 200))
   beta <- coef(model_lm)[2]
-  beta_2 <- coef(model_lm2)[-1]
   pdf(paste("plots_residual/residual_left_hippo_linear",toString(num),".pdf",sep='')) 
   plot(y~x,
        main = paste('p-value linear: ',formatC(summary(model_lm)$coefficients[2,4], format = "e", digits = 5),
                     ', beta estimate linear:',formatC(beta,format = "e", digits = 5),
                     sep=''),
-       xlab = colnames(df1)[num],ylab = colnames(df2)[47])
+       xlab = colnames(df1)[num],ylab = 'left hippocampus')
   lines(new.data$dist*beta ~ new.data$dist, col = "red")
-  dev.off()
-  pdf(paste("plots_residual/residual_left_hippo_quad",toString(num),".pdf",sep=''))
-  plot(y~x+I(x^2),
-       main = paste('p-value quad:',formatC(summary(model_lm2)$coefficients[2,4],format = "e", digits = 5),
-                    ', beta estimate quad:',formatC(beta_2[2],format = "e", digits = 5),
-                    sep=''),
-       xlab = colnames(df1)[num],ylab = colnames(df2)[47])
-  new.data_2 <- new.data^2
-  lines(new.data_2$dist*beta_2[1]+(new.data_2$dist)^2*beta_2[2] ~ new.data_2$dist, col = "blue")
   dev.off()
 }
 
@@ -594,26 +587,85 @@ for (num in 1:length(df1)){
   y <- data.matrix(df2[48])
   x <- data.matrix(df1[num])
   model_lm <- lm(y ~ x)
-  model_lm2 <- lm(y ~ x + I(x^2))
   new.data <- data.frame(dist = seq(from = min(x),
                                     to = max(x), length.out = 200))
   beta <- coef(model_lm)[2]
-  beta_2 <- coef(model_lm2)[-1]
   pdf(paste("plots_residual/residual_right_hippo_linear",toString(num),".pdf",sep='')) 
   plot(y~x,
        main = paste('p-value linear: ',formatC(summary(model_lm)$coefficients[2,4], format = "e", digits = 5),
                     ', beta estimate linear:',formatC(beta,format = "e", digits = 5),
                     sep=''),
-       xlab = colnames(df1)[num],ylab = colnames(df2)[47])
+       xlab = colnames(df1)[num],ylab = 'right hippocampus')
   lines(new.data$dist*beta ~ new.data$dist, col = "red")
   dev.off()
-  pdf(paste("plots_residual/residual_right_hippo_quad",toString(num),".pdf",sep=''))
-  plot(y~x+I(x^2),
-       main = paste('p-value quad:',formatC(summary(model_lm2)$coefficients[2,4],format = "e", digits = 5),
-                    ', beta estimate quad:',formatC(beta_2[2],format = "e", digits = 5),
+}
+
+for (num in 1:length(df1)){
+  y <- data.matrix(df3[47])
+  x <- data.matrix(df1[num])
+  model_lm <- lm(y ~ x)
+  new.data <- data.frame(dist = seq(from = min(x),
+                                    to = max(x), length.out = 200))
+  beta <- coef(model_lm)[2]
+  pdf(paste("plots_residual/residual_left_hippo_quad",toString(num),".pdf",sep=''))
+  plot(y~x,
+       main = paste('p-value quad:',formatC(summary(model_lm)$coefficients[2,4],format = "e", digits = 5),
+                    ', beta estimate quad:',formatC(beta,format = "e", digits = 5),
                     sep=''),
-       xlab = colnames(df1)[num],ylab = colnames(df2)[47])
-  new.data_2 <- new.data^2
-  lines(new.data_2$dist*beta_2[1]+(new.data_2$dist)^2*beta_2[2] ~ new.data_2$dist, col = "blue")
+       xlab = colnames(df1)[num],ylab = 'left hippocampus')
+  lines(new.data$dist*beta ~ new.data$dist, col = "blue")
+  dev.off()
+}  
+  
+for (num in 1:length(df1)){
+  y <- data.matrix(df3[48])
+  x <- data.matrix(df1[num])
+  model_lm <- lm(y ~ x)
+  new.data <- data.frame(dist = seq(from = min(x),
+                                    to = max(x), length.out = 200))
+  beta <- coef(model_lm)[2]
+  pdf(paste("plots_residual/residual_right_hippo_quad",toString(num),".pdf",sep=''))
+  plot(y~x,
+       main = paste('p-value quad:',formatC(summary(model_lm)$coefficients[2,4],format = "e", digits = 5),
+                    ', beta estimate quad:',formatC(beta,format = "e", digits = 5),
+                    sep=''),
+       xlab = colnames(df1)[num],ylab = 'right hippocampus')
+  lines(new.data$dist*beta ~ new.data$dist, col = "blue")
   dev.off()
 }
+
+# Plot BIC of linear vs quad
+y <- read.table('my_output/my_BIC_geo_Z_scored.csv',sep=',',header=FALSE)
+x <- read.table('my_output/my_BIC_quad_geo_Z_scored.csv',sep=',',header=FALSE)
+
+pdf(paste("plots_BIC/BIC_lin_vs_quad_left_hippo",".pdf",sep=''))
+new.data <- data.frame(dist = seq(from = min(data.matrix(x[47,])),
+                                  to = max(data.matrix(x[47,])), length.out = 2000))
+plot(data.matrix(y[47,])~data.matrix(x[47,]))
+lines(new.data$dist, new.data$dist, col = "blue")
+dev.off()
+
+pdf(paste("plots_BIC/BIC_lin_vs_quad_right_hippo",".pdf",sep=''))
+new.data <- data.frame(dist = seq(from = min(data.matrix(x[48,])),
+                                  to = max(data.matrix(x[48,])), length.out = 2000))
+plot(data.matrix(y[48,])~data.matrix(x[48,]))
+lines(new.data$dist, new.data$dist, col = "blue")
+dev.off()
+
+# read from the matlab file labled T1MRI values
+df1 <- read.table('T1MRI.txt',sep='\t',header=FALSE)
+df1 <- df1[-c(28,139)]
+colnames(df1) <- rep('a',length = 137)
+df2 <- df1
+for (num in 1:137){
+  b <- gsub("[a-zA-Z(), ]","",df2$a)
+  df1[num] <- b
+  df2 <- df2[-1] 
+  colnames(df2) <- rep('a',length = 137-num)
+}
+df3 <- as.numeric(df1)
+write.table(df3,'T1MRI_field_id.csv',sep='\n',row.names = FALSE,col.names = FALSE)
+
+
+
+
