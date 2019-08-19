@@ -10,7 +10,7 @@ dist_to_coast,24508,Distance (Euclidean) to coast
 air_pol_1,24005;24008,Particulate matter air pollution (pm10) and(2.5-10um) ; 2010
 air_pol_2,24003;24004;24006;24007,"Nitrogen dioxide+oxide air pollution, Particulate matter air pollution (pm2.5), (pm2.5) absorbance,2010"
 Traffic_2,24015;24013;24009,Sum of road length of major roads within 100m + Total traffic load on major roads + Traffic intensity on the nearest road
-Greenspace_1,24606;24507;24500;24503,"Greenspace/Natural Environment percentage, buffer 1000m/300m"
+Greenspace_1,24506;24507;24500;24503,"Greenspace/Natural Environment percentage, buffer 1000m/300m"
 Greenspace_2,24501;24504,"Domestic garden percentage, buffer 1000m/300m"
 Pop_density,20118,Home area population density
 
